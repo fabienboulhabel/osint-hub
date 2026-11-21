@@ -3,23 +3,24 @@
    ---------------------------------------------------------
    Sommaire
      1. Configuration & utilitaires     10. Analyse photo
-     2. Réglages (thème, effets)        11. Entraînement
+     2. Réglages & personnalisation     11. Entraînement (programme, exercices, GeoGuessr, mémo)
      3. Activité (calendrier)           12. Enquêtes (données, tableau, chronologie)
-     4. Navigation & transitions        13. Tableau de bord
+     4. Navigation, barre & menu        13. Tableau de bord
      5. Décor : courbes de niveau       14. À propos, textes légaux, paramètres
      6. Accueil : globe & animations    15. Charte au premier lancement
      7. Chronomètre                     16. Palette de commandes & raccourcis
      8. Recherche                       17. Démarrage
      9. Carte GEOINT
+   Le contenu pédagogique (questions, programme…) est dans data.js
    ========================================================= */
 
 /* ---------- 1. CONFIGURATION & UTILITAIRES ---------- */
-const VERSION = "5.0.0";
+const VERSION = "5.2.0";
 const TERMS_VERSION = "1.0";                 // ← augmente-le si tu modifies les conditions : l'accord sera redemandé
-const REPO_URL = "https://github.com/fabienboulhabel/osint-hub";      // ← remplace par l'adresse de ton dépôt GitHub
-const ACCENT = "#ff3b00";
+const REPO_URL = "https://github.com/";      // ← remplace par l'adresse de ton dépôt GitHub
 const PREFIX = "osh.";                       // préfixe des données (évite les conflits avec tes autres sites *.github.io)
 const LEGACY = ["cases", "activeCase", "tasks", "sessions", "gg", "ggMaps", "totalSecs", "searchHistory", "mapView", "mapLayer", "report"];
+let ACCENT = "#ff3b00";                      // couleur d'accent (personnalisable dans le menu)
 
 const $ = id => document.getElementById(id);
 const $$ = sel => [...document.querySelectorAll(sel)];
@@ -27,10 +28,16 @@ const enc = encodeURIComponent;
 const pad = (n, l = 2) => String(n).padStart(l, "0");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const trunc = (s, n) => (s = String(s || "")).length > n ? s.slice(0, n - 1) + "…" : s;
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const uid = () => "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const openUrl = u => window.open(u, "_blank", "noopener");
 const isTyping = () => ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = (a, n) => shuffle(a).slice(0, n);
+const mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+const fmtNum = n => Math.round(n).toLocaleString("fr-FR");
+const fmtMins = s => { const m = Math.floor(s / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h${pad(m % 60)}`; };
 
 function load(k, d) {
   try {
@@ -45,7 +52,7 @@ const save = (k, v) => localStorage.setItem(PREFIX + k, JSON.stringify(v));
 let toastTimer;
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
 }
 function download(name, content, type) {
   const a = document.createElement("a");
@@ -54,24 +61,42 @@ function download(name, content, type) {
 }
 const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const todayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const dayIndex = () => { const d = new Date(); return Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(2020, 0, 1)) / 864e5); };
+function seeded(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 16807 % 2147483647) / 2147483647; }
 
-/* ---------- 2. RÉGLAGES ---------- */
-let settings = { theme: "paper", fx: !reducedMotion, ...load("settings", {}) };
+/* ---------- 2. RÉGLAGES & PERSONNALISATION ---------- */
+const DEFAULT_ORDER = ["home", "dashboard", "search", "map", "photo", "training", "cases", "about"];
+const DEFAULT_QUICK = ["chrono", "quiz", "ggDaily", "newCase", "backup", "theme"];
+const ACCENTS = ["#ff3b00", "#e11d48", "#2563eb", "#059669", "#7c3aed", "#d97706", "#0d9488"];
+const SETTINGS_DEFAULT = { theme: "paper", fx: !reducedMotion, accent: "#ff3b00", order: DEFAULT_ORDER, hidden: [], quick: DEFAULT_QUICK, tileStats: true };
+let settings = { ...SETTINGS_DEFAULT, ...load("settings", {}) };
 if (!["paper", "night"].includes(settings.theme)) settings.theme = "paper";
+if (!/^#[0-9a-f]{6}$/i.test(settings.accent)) settings.accent = "#ff3b00";
+settings.order = [...settings.order.filter(v => DEFAULT_ORDER.includes(v)), ...DEFAULT_ORDER.filter(v => !settings.order.includes(v))];
+settings.hidden = (settings.hidden || []).filter(v => DEFAULT_ORDER.includes(v));
+if (!Array.isArray(settings.quick)) settings.quick = DEFAULT_QUICK;
+
 const fxOn = () => settings.fx && !reducedMotion;
 function applySettings() {
+  ACCENT = settings.accent;
+  document.documentElement.style.setProperty("--accent", ACCENT);
   document.documentElement.dataset.theme = settings.theme;
   document.body.classList.toggle("fx", fxOn());
-  $("fxToggle").checked = settings.fx;
-  $$("#themeSeg button").forEach(b => b.classList.toggle("on", b.dataset.theme === settings.theme));
+  $("fxToggle").checked = settings.fx; $("mcFx").checked = settings.fx; $("mcStats").checked = settings.tileStats;
+  $$("button[data-theme]").forEach(b => b.classList.toggle("on", b.dataset.theme === settings.theme));
   document.querySelector('meta[name="theme-color"]').content = settings.theme === "night" ? "#0f100e" : "#0d0d0d";
-  topo.refreshColors(); globe.refreshColors();
+  topo.refreshColors(); globe.refreshColors(); if (typeof profile !== "undefined") profile.draw();
+  renderNav();
+  if ($("menu").classList.contains("open") && $("menuCustom").hidden) renderMenu();
   if (current === "training") drawChart();
+  if (map) { updateSun(); refreshCaseMarkers(); }
 }
 function setSetting(k, v) { settings[k] = v; save("settings", settings); applySettings(); }
 $("themeBtn").onclick = () => setSetting("theme", settings.theme === "night" ? "paper" : "night");
-$$("#themeSeg button").forEach(b => b.onclick = () => setSetting("theme", b.dataset.theme));
+$$("button[data-theme]").forEach(b => b.onclick = () => setSetting("theme", b.dataset.theme));
 $("fxToggle").onchange = e => setSetting("fx", e.target.checked);
+$("mcFx").onchange = e => setSetting("fx", e.target.checked);
+$("mcStats").onchange = e => setSetting("tileStats", e.target.checked);
 
 /* ---------- 3. ACTIVITÉ ---------- */
 let activity = load("activity", {});
@@ -83,12 +108,30 @@ function streak() {
   return n;
 }
 
-/* ---------- 4. NAVIGATION & TRANSITIONS ---------- */
+/* ---------- 4. NAVIGATION, BARRE & MENU ---------- */
 // Navigation par ancres (#search, #map…) : le bouton « retour » de la souris fonctionne
-const VIEWS = {
-  home: "Accueil", dashboard: "Tableau de bord", search: "Recherche", map: "Carte GEOINT",
-  photo: "Analyse photo", training: "Entraînement", cases: "Enquêtes", about: "À propos"
+const MODS = {
+  home:      { n: "Accueil",         s: "Accueil",      k: "0", d: "Globe, présentation des modules, méthode et règles de terrain." },
+  dashboard: { n: "Tableau de bord", s: "Bord",         k: "1", d: "Activité, série de jours, rang et prochaines étapes." },
+  search:    { n: "Recherche",       s: "Recherche",    k: "2", d: "Pseudo, nom, URL ou image : les bons outils, déjà remplis." },
+  map:       { n: "Carte GEOINT",    s: "Carte",        k: "3", d: "IGN, satellite, soleil et ombres, mesure de distance." },
+  photo:     { n: "Analyse photo",   s: "Photo",        k: "4", d: "Métadonnées, loupe, réglages d'image, grille d'observation." },
+  training:  { n: "Entraînement",    s: "Entraînement", k: "5", d: "Programme en 5 niveaux, quiz, GeoGuessr, mémo d'indices." },
+  cases:     { n: "Enquêtes",        s: "Enquêtes",     k: "6", d: "Tableau à fils rouges, chronologie et rapports." },
+  about:     { n: "À propos",        s: "À propos",     k: "—", d: "Conditions, confidentialité et paramètres." }
 };
+const SVG = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true">${p}</svg>`;
+const ICONS = {
+  home: SVG('<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.5 7.5h15M4.5 16.5h15"/>'),
+  dashboard: SVG('<rect x="3" y="3" width="18" height="18"/><path d="M7 17v-4M12 17V8M17 17v-6"/>'),
+  search: SVG('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/>'),
+  map: SVG('<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>'),
+  photo: SVG('<rect x="3" y="7" width="18" height="13"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>'),
+  training: SVG('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>'),
+  cases: SVG('<path d="M3 6h7l2 2h9v12H3z"/><path d="M7 13h10M7 16.5h6"/>'),
+  about: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 10.5v6.5M12 7v.6"/>')
+};
+const VIEWS = Object.fromEntries(Object.entries(MODS).map(([k, v]) => [k, v.n]));
 const KEYS = ["home", "dashboard", "search", "map", "photo", "training", "cases"]; // touches 0 à 6
 const onEnter = {};
 let current = null, navToken = 0;
@@ -123,11 +166,110 @@ function show(v) {
   }, 400);
 }
 
-// Menu plein écran
+// Barre du haut (suit l'ordre et les masquages choisis dans le menu)
+function renderNav() {
+  const vis = settings.order.filter(v => v !== "home" && v !== "about" && !settings.hidden.includes(v));
+  $("mainNav").innerHTML = vis.map(v => `<a href="#${v}" data-v="${v}" class="${v === current ? "active" : ""}"><i>0${MODS[v].k}</i><span data-scramble>${MODS[v].s}</span></a>`).join("");
+  $$("#mainNav a").forEach(a => a.addEventListener("mouseenter", () => scramble(a.querySelector("[data-scramble]"))));
+}
+
+// Actions rapides du menu
+const QUICK = {
+  chrono:  { n: "Chronomètre",           i: "◷", keep: true, l: () => timerId ? `Chrono ${fmtT(secs)}` : "Lancer le chrono", f: () => toggleTimer() },
+  quiz:    { n: "Quiz du jour",          i: "?", l: () => `Quiz du jour : ${dailyQuizDef().name}`, f: () => startDailyQuiz() },
+  ggDaily: { n: "Défi GeoGuessr du jour", i: "◉", l: () => "Défi GeoGuessr du jour", f: () => { go("training"); setTrainTab("gg"); } },
+  memo:    { n: "Ajouter au mémo",       i: "✎", l: () => "Ajouter un indice au mémo", f: () => { go("training"); setTrainTab("memo"); setTimeout(() => $("memoText").focus(), 700); } },
+  newCase: { n: "Nouveau dossier",       i: "+", l: () => "Nouveau dossier d'enquête", f: () => { go("cases"); setTimeout(() => $("newCase").focus(), 700); } },
+  backup:  { n: "Sauvegarde",            i: "⤓", keep: true, l: () => "Sauvegarder (.json)", f: () => exportAll() },
+  theme:   { n: "Thème",                 i: "◐", keep: true, l: () => settings.theme === "night" ? "Passer en thème papier" : "Passer en thème nuit", f: () => $("themeBtn").click() },
+  fx:      { n: "Effets animés",         i: "✦", keep: true, l: () => settings.fx ? "Couper les effets" : "Activer les effets", f: () => setSetting("fx", !settings.fx) },
+  palette: { n: "Palette de commandes",  i: "⌘", l: () => "Palette de commandes", f: () => openPalette() },
+  measure: { n: "Mesure sur la carte",   i: "⟷", l: () => "Mesurer une distance", f: () => { go("map"); setTimeout(() => !measuring && $("measureBtn").click(), 700); } },
+  sun:     { n: "Soleil maintenant",     i: "☀", l: () => "Soleil à l'heure actuelle", f: () => { go("map"); setTimeout(setSunNow, 700); } }
+};
+function modStat(v) {
+  const st = computeTraining();
+  switch (v) {
+    case "home": return "Globe · méthode · règles";
+    case "dashboard": return `Série ${streak()} j · ${fmtMins(totalSecs)}`;
+    case "search": return searchHist[0] ? `Dernière : ${searchHist[0]}` : "Aucune recherche récente";
+    case "map": return point ? `Point ${fmtLL(...point)}` : "Aucun point placé";
+    case "photo": return currentFile ? `Image : ${currentFile.name || "collée"}` : "Aucune image chargée";
+    case "training": return `${st.rank.name} · ${st.xp} XP · ${st.doneItems.length}/${st.items.length} étapes`;
+    case "cases": return `${currentCase().name} · ${currentCase().entries.length} fiche(s)`;
+    case "about": return "Version " + VERSION;
+  }
+  return "";
+}
+function renderMenu() {
+  const vis = settings.order.filter(v => !settings.hidden.includes(v));
+  $("menuTiles").innerHTML = vis.map((v, i) => `<a class="m-tile ${v === current ? "here" : ""}" href="#${v}" style="--i:${i}">
+      <div class="mt-top">${ICONS[v]}<span class="mt-r">${v === current ? '<span class="mt-here">ICI</span>' : ""}<span class="mt-key">${MODS[v].k}</span></span></div>
+      <h3>${MODS[v].n}</h3><p>${MODS[v].d}</p>
+      ${settings.tileStats ? `<span class="mt-stat">${esc(modStat(v))}</span>` : ""}</a>`).join("")
+    || `<p class="mono">Tous les modules sont masqués : clique sur « Personnaliser ».</p>`;
+  const qk = settings.quick.filter(id => QUICK[id]);
+  $("menuQuick").innerHTML = qk.map(id => `<button class="q-act ${id === "chrono" && timerId ? "on" : ""}" data-qa="${id}"><i>${QUICK[id].i}</i><span>${esc(QUICK[id].l())}</span></button>`).join("")
+    || `<p class="small" style="opacity:.6">Aucune action : ajoute-en via « Personnaliser ».</p>`;
+  $$("#menuQuick [data-qa]").forEach(b => b.onclick = () => {
+    const q = QUICK[b.dataset.qa];
+    if (!q.keep) closeMenu();
+    q.f();
+    if (q.keep && $("menu").classList.contains("open")) renderMenu();
+  });
+  renderToday();
+}
+function renderToday() {
+  const st = computeTraining(), k = todayKey(), dq = dailyQuizDef(), gd = ggDaily();
+  const dqDone = load("quizDaily", "") === k, ggDone = load("ggDailyDone", "") === k;
+  $("menuToday").innerHTML = `
+    <div class="t-row"><span>Date</span><b>${new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</b></div>
+    <div class="t-row"><span>Série</span><b>${streak()} jour${streak() > 1 ? "s" : ""}</b></div>
+    <div class="t-row"><span>Activité du jour</span><b>${activity[k] || 0} pt</b></div>
+    <div class="t-row"><span>Rang</span><b>${st.rank.name} · ${st.xp} XP</b></div>
+    <div class="t-row"><span>Quiz du jour</span><b class="${dqDone ? "ok" : ""}">${dqDone ? "✓ Fait" : esc(dq.name)}</b></div>
+    <div class="t-row"><span>Défi GeoGuessr</span><b class="${ggDone ? "ok" : ""}">${ggDone ? "✓ Relevé" : `${gd.mode} · ${fmtNum(gd.target)} pts`}</b></div>`;
+}
+function renderCustom() {
+  const n = settings.order.length;
+  $("mcModules").innerHTML = settings.order.map((v, i) => {
+    const off = settings.hidden.includes(v);
+    return `<li class="${off ? "off" : ""}">${ICONS[v]}<b>${MODS[v].n}</b>
+      <button class="mc-ico" data-up="${i}" ${i === 0 ? "disabled" : ""} title="Monter">↑</button>
+      <button class="mc-ico" data-down="${i}" ${i === n - 1 ? "disabled" : ""} title="Descendre">↓</button>
+      <button class="mc-ico eye" data-vis="${v}">${off ? "MASQUÉ" : "VISIBLE"}</button></li>`;
+  }).join("");
+  const move = (i, d) => { const o = [...settings.order]; [o[i], o[i + d]] = [o[i + d], o[i]]; setSetting("order", o); renderCustom(); };
+  $$("[data-up]").forEach(b => b.onclick = () => move(+b.dataset.up, -1));
+  $$("[data-down]").forEach(b => b.onclick = () => move(+b.dataset.down, 1));
+  $$("[data-vis]").forEach(b => b.onclick = () => {
+    const v = b.dataset.vis, h = settings.hidden.includes(v) ? settings.hidden.filter(x => x !== v) : [...settings.hidden, v];
+    setSetting("hidden", h); renderCustom();
+  });
+  $("mcQuick").innerHTML = Object.entries(QUICK).map(([id, q]) => `<label><input type="checkbox" data-qk="${id}" ${settings.quick.includes(id) ? "checked" : ""}><i>${q.i}</i>${q.n}</label>`).join("");
+  $$("[data-qk]").forEach(c => c.onchange = () => setSetting("quick", Object.keys(QUICK).filter(id => $$(`[data-qk="${id}"]`)[0].checked)));
+  $("mcAccent").innerHTML = ACCENTS.map(a => `<button class="sw ${a === settings.accent ? "on" : ""}" style="background:${a}" data-acc="${a}" title="${a}"></button>`).join("")
+    + `<label class="sw sw-custom ${ACCENTS.includes(settings.accent) ? "" : "on"}" title="Couleur personnalisée" ${ACCENTS.includes(settings.accent) ? "" : `style="background:${settings.accent}"`}>+<input type="color" id="mcColor" value="${settings.accent}"></label>`;
+  $$("[data-acc]").forEach(b => b.onclick = () => { setSetting("accent", b.dataset.acc); renderCustom(); });
+  $("mcColor").oninput = e => setSetting("accent", e.target.value);
+  $("mcColor").onchange = () => renderCustom();
+}
+function setMenuEdit(on) {
+  $("menuMain").hidden = on; $("menuCustom").hidden = !on;
+  $("menuEdit").classList.toggle("on", on);
+  $("menuEdit").textContent = on ? "← Retour au menu" : "✎ Personnaliser";
+  on ? renderCustom() : renderMenu();
+}
+function openMenu(edit = false) { closePalette(); renderMenu(); setMenuEdit(edit); $("menu").classList.add("open"); }
 const closeMenu = () => $("menu").classList.remove("open");
-$("menuBtn").onclick = () => $("menu").classList.add("open");
+$("menuBtn").onclick = () => openMenu(false);
 $("menuClose").onclick = closeMenu;
-$$("#menu nav a").forEach(a => a.addEventListener("mouseenter", () => $("menuDesc").textContent = a.dataset.d));
+$("menuEdit").onclick = () => setMenuEdit($("menuCustom").hidden);
+$("mcReset").onclick = () => {
+  if (!confirm("Remettre l'ordre des modules, les actions rapides et la couleur par défaut ?")) return;
+  settings = { ...SETTINGS_DEFAULT, theme: settings.theme, fx: settings.fx };
+  save("settings", settings); applySettings(); renderCustom(); toast("Personnalisation réinitialisée");
+};
 document.addEventListener("click", e => { if (e.target.closest('a[href^="#"]')) closeMenu(); });
 
 // Barre de progression de lecture + animations liées au défilement
@@ -151,15 +293,12 @@ function scramble(el) {
   let f = 0; const total = txt.length * 2 + 10;
   const step = () => {
     let out = "";
-    for (let i = 0; i < txt.length; i++) {
-      out += txt[i] === " " || i < (f - 10) / 2 ? txt[i] : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-    }
+    for (let i = 0; i < txt.length; i++) out += txt[i] === " " || i < (f - 10) / 2 ? txt[i] : GLYPHS[(Math.random() * GLYPHS.length) | 0];
     el.textContent = out;
     if (++f <= total) el._raf = requestAnimationFrame(step); else el.textContent = txt;
   };
   step();
 }
-$$(".nav a").forEach(a => a.addEventListener("mouseenter", () => scramble(a.querySelector("[data-scramble]"))));
 
 /* ---------- 5. DÉCOR : COURBES DE NIVEAU ANIMÉES ---------- */
 const topo = (() => {
@@ -190,8 +329,7 @@ const topo = (() => {
     mouse.sx += (mouse.x - mouse.sx) * .07; mouse.sy += (mouse.y - mouse.sy) * .07;
     for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
       const x = i * STEP, y = j * STEP, dx = x - mouse.sx, dy = y - mouse.sy;
-      f[j * cols + i] = noise(x * .0032 + t * .025, y * .0032) + .5 * noise(x * .008, y * .008 - t * .035)
-        + .6 * Math.exp(-(dx * dx + dy * dy) / 40000);
+      f[j * cols + i] = noise(x * .0032 + t * .025, y * .0032) + .5 * noise(x * .008, y * .008 - t * .035) + .6 * Math.exp(-(dx * dx + dy * dy) / 40000);
     }
     ctx.clearRect(0, 0, W, H);
     let n = 0;
@@ -231,9 +369,9 @@ const globe = (() => {
   const CORSE = [[9.4, 43.0], [9.55, 42.1], [9.2, 41.4], [8.6, 41.9], [8.8, 42.6]];
   const CITIES = [["PARIS", 2.35, 48.86], ["MARSEILLE", 5.37, 43.3], ["BORDEAUX", -0.58, 44.84], ["LILLE", 3.06, 50.63], ["STRASBOURG", 7.75, 48.57],
     ["TOULOUSE", 1.44, 43.6], ["NANTES", -1.55, 47.22], ["LYON", 4.8357, 45.764]];
-  let size = 0, dpr = 1, lon0 = 2.5, lat0 = 40, vx = 0, vy = 0, drag = null, lastTouch = 0, tt = 0, ink = "#0d0d0d", soft = "rgba(13,13,13,.25)";
+  let size = 0, lon0 = 2.5, lat0 = 40, vx = 0, vy = 0, drag = null, lastTouch = 0, tt = 0, ink = "#0d0d0d", soft = "rgba(13,13,13,.25)";
   function resize() {
-    dpr = Math.min(devicePixelRatio || 1, 2); size = c.clientWidth;
+    const dpr = Math.min(devicePixelRatio || 1, 2); size = c.clientWidth;
     if (!size) return;
     c.width = c.height = size * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
@@ -254,7 +392,6 @@ const globe = (() => {
     if (!size) return;
     const R = size * .4, cx = size / 2, cy = size / 2;
     ctx.clearRect(0, 0, size, size);
-    // Graduations extérieures
     ctx.strokeStyle = ink; ctx.lineWidth = 1;
     for (let a = 0; a < 360; a += 5) {
       const r1 = R + 10, r2 = R + (a % 30 === 0 ? 22 : 15), s = Math.sin(a * RAD), co = Math.cos(a * RAD);
@@ -262,51 +399,42 @@ const globe = (() => {
     }
     ctx.font = "600 10px JetBrains Mono, monospace"; ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     [["N", 0, -1], ["E", 1, 0], ["S", 0, 1], ["O", -1, 0]].forEach(([t, x, y]) => ctx.fillText(t, cx + x * (R + 34), cy + y * (R + 34)));
-    // Sphère
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.lineWidth = 1.5; ctx.stroke();
-    // Graticule
     ctx.beginPath(); ctx.strokeStyle = soft; ctx.lineWidth = .8;
     for (let lo = -180; lo < 180; lo += 15) { const pts = []; for (let la = -90; la <= 90; la += 3) pts.push([lo, la]); line(pts, R, cx, cy); }
     for (let la = -75; la <= 75; la += 15) { const pts = []; for (let lo = -180; lo <= 180; lo += 3) pts.push([lo, la]); line(pts, R, cx, cy); }
     ctx.stroke();
-    // Méridien de balayage
     const scanLon = lon0 - 90 + ((tt * 22) % 180);
     ctx.beginPath(); const sp = []; for (let la = -90; la <= 90; la += 2) sp.push([scanLon, la]); line(sp, R, cx, cy);
     ctx.strokeStyle = ACCENT + "aa"; ctx.lineWidth = 1.5; ctx.stroke();
-    // France
     [FRANCE, CORSE].forEach(poly => {
       const pts = poly.map(([lo, la]) => proj(lo, la, R, cx, cy));
       if (pts.some(p => p[2] <= 0)) return;
       ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
       ctx.fillStyle = ACCENT + "33"; ctx.fill(); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.6; ctx.stroke();
     });
-    // Villes
-    ctx.font = "600 9px JetBrains Mono, monospace"; ctx.textAlign = "left";
+    ctx.textAlign = "left";
     CITIES.forEach(([name, lo, la]) => {
       const [x, y, v] = proj(lo, la, R, cx, cy); if (v <= 0) return;
       const lyon = name === "LYON";
       ctx.fillStyle = lyon ? ACCENT : ink; ctx.fillRect(x - (lyon ? 3 : 2), y - (lyon ? 3 : 2), lyon ? 6 : 4, lyon ? 6 : 4);
       if (lyon) {
         const k = (tt * .8) % 1;
-        ctx.beginPath(); ctx.arc(x, y, 5 + k * 22, 0, 7); ctx.strokeStyle = `rgba(255,59,0,${1 - k})`; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 5 + k * 22, 0, 7); ctx.strokeStyle = ACCENT + pad(Math.round((1 - k) * 255).toString(16)); ctx.lineWidth = 1.5; ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 34, y - 30); ctx.lineTo(x + 110, y - 30); ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.stroke();
         ctx.fillStyle = ink; ctx.font = "800 10px JetBrains Mono, monospace"; ctx.fillText("LYON · 45.76N 4.84E", x + 36, y - 38);
-        ctx.font = "600 9px JetBrains Mono, monospace";
       }
     });
-    $("globeRead").textContent = `CENTRE ${Math.abs(lat0).toFixed(1)}°${lat0 >= 0 ? "N" : "S"} · ${Math.abs(((lon0 + 540) % 360) - 180).toFixed(1)}°${((lon0 + 540) % 360) - 180 >= 0 ? "E" : "O"}`;
+    const lonN = ((lon0 + 540) % 360) - 180;
+    $("globeRead").textContent = `CENTRE ${Math.abs(lat0).toFixed(1)}°${lat0 >= 0 ? "N" : "S"} · ${Math.abs(lonN).toFixed(1)}°${lonN >= 0 ? "E" : "O"}`;
   }
   function loop() {
     requestAnimationFrame(loop);
-    if (current !== "home" || document.hidden) return;
-    if (!fxOn()) return;
+    if (current !== "home" || document.hidden || !fxOn()) return;
     tt += 1 / 60;
     if (!drag) {
       lon0 += vx; lat0 += vy; vx *= .94; vy *= .94;
-      if (performance.now() - lastTouch > 3500) {
-        lon0 += (2.5 + 16 * Math.sin(tt * .22) - lon0) * .01;
-        lat0 += (40 - lat0) * .01;
-      }
+      if (performance.now() - lastTouch > 3500) { lon0 += (2.5 + 16 * Math.sin(tt * .22) - lon0) * .01; lat0 += (40 - lat0) * .01; }
       lat0 = Math.max(-80, Math.min(80, lat0));
     }
     draw();
@@ -325,21 +453,80 @@ const globe = (() => {
   addEventListener("resize", () => { resize(); draw(); });
   return { start: () => { resize(); refreshColors(); requestAnimationFrame(loop); }, resize, draw, refreshColors };
 })();
+onEnter.home = () => { globe.resize(); globe.draw(); setTimeout(() => profile.resize(), 30); };
 
 // Réticule qui suit la souris sur l'accueil
 addEventListener("mousemove", e => {
   if (current !== "home" || !fxOn()) return;
-  $$("#cross .cx")[0].style.top = e.clientY + "px";
-  $$("#cross .cy")[0].style.left = e.clientX + "px";
+  document.querySelector("#cross .cx").style.top = e.clientY + "px";
+  document.querySelector("#cross .cy").style.left = e.clientX + "px";
   const l = $("crossLbl"); l.style.left = e.clientX + 12 + "px"; l.style.top = e.clientY + 12 + "px";
   l.textContent = `X ${pad(e.clientX, 4)} · Y ${pad(e.clientY + Math.round(scrollY), 4)}`;
 }, { passive: true });
 
-// Bandeau défilant
-const tickerItems = ["GOOGLE LENS", "STREET VIEW", "GÉOPORTAIL IGN", "SUNCALC", "OVERPASS TURBO", "WAYBACK MACHINE", "YANDEX", "TINEYE", "WHATSMYNAME", "CARTORADIO", "MAPILLARY"];
-$("ticker").innerHTML = [...tickerItems, ...tickerItems].map(t => `<span><b>●</b> ${t}</span>`).join("");
+// Coupe topographique schématique Lyon → Mont Blanc (interactive)
+const profile = (() => {
+  const c = $("profile"), ctx = c.getContext("2d");
+  // [distance km, altitude m, nom] — repères approximatifs, profil volontairement schématique
+  const P = [[0, 170, "LYON"], [12, 210], [25, 240], [38, 260, "BOURGOIN"], [52, 300], [62, 420], [70, 380, "LA TOUR-DU-PIN"], [82, 520], [90, 300, "LAC D'AIGUEBELETTE"],
+    [97, 890], [104, 600], [110, 270, "CHAMBÉRY"], [122, 300], [134, 340, "ALBERTVILLE"], [148, 900], [158, 1550], [166, 1100], [176, 1000, "SALLANCHES"],
+    [184, 1600], [192, 1035, "CHAMONIX"], [198, 2600], [203, 3800], [206, 4806, "MONT BLANC"], [210, 3600]];
+  const MAXD = 210, MAXA = 5000;
+  let W = 0, H = 0, mx = -1, t0 = performance.now();
+  const alt = d => { for (let i = 1; i < P.length; i++) if (d <= P[i][0]) { const [d0, a0] = P[i - 1], [d1, a1] = P[i], k = (d - d0) / (d1 - d0), s = k * k * (3 - 2 * k); return a0 + (a1 - a0) * s; } return P[P.length - 1][1]; };
+  function resize() { const dpr = Math.min(devicePixelRatio || 1, 2); W = c.clientWidth; H = c.clientHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw(); }
+  function draw() {
+    if (!W) return;
+    const ink = cssVar("--ink"), muted = cssVar("--muted"), padL = 46, padR = 16, top = 26, bot = 26;
+    const X = d => padL + d / MAXD * (W - padL - padR), Y = a => top + (1 - a / MAXA) * (H - top - bot);
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = "10px JetBrains Mono, monospace"; ctx.fillStyle = muted; ctx.strokeStyle = muted; ctx.lineWidth = 1;
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (let a = 0; a <= MAXA; a += 1000) { ctx.globalAlpha = .25; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(padL, Y(a)); ctx.lineTo(W - padR, Y(a)); ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]); ctx.fillText(a + " m", padL - 6, Y(a)); }
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (let d = 0; d <= MAXD; d += 30) ctx.fillText(d + " km", X(d), H - bot + 8);
+    // relief : hachures + trait
+    const steps = Math.max(60, Math.floor(W / 3));
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+    for (let i = 0; i <= steps; i++) { const d = i / steps * MAXD; ctx.lineTo(X(d), Y(alt(d))); }
+    ctx.lineTo(X(MAXD), Y(0)); ctx.closePath();
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = ink; ctx.globalAlpha = .18; ctx.beginPath();
+    for (let x = -H; x < W; x += 7) { ctx.moveTo(x, H); ctx.lineTo(x + H, 0); }
+    ctx.stroke(); ctx.restore(); ctx.globalAlpha = 1;
+    // tracé progressif à l'apparition
+    const k = Math.min(1, (performance.now() - t0) / 1600);
+    ctx.beginPath();
+    for (let i = 0; i <= steps * k; i++) { const d = i / steps * MAXD; i ? ctx.lineTo(X(d), Y(alt(d))) : ctx.moveTo(X(d), Y(alt(d))); }
+    ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.stroke();
+    // repères nommés
+    ctx.font = "600 9.5px JetBrains Mono, monospace"; ctx.textBaseline = "bottom";
+    P.filter(p => p[2] && p[0] <= MAXD * k).forEach(([d, a, n], i) => {
+      const x = X(d), y = Y(a), lift = 14 + (i % 2) * 12;
+      ctx.strokeStyle = muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x, y - lift); ctx.stroke();
+      ctx.fillStyle = n === "LYON" || n === "MONT BLANC" ? ACCENT : ink; ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+      ctx.textAlign = x > W - 90 ? "right" : x < padL + 40 ? "left" : "center"; ctx.fillText(n, x, y - lift - 2);
+    });
+    // curseur
+    if (mx >= padL && mx <= W - padR) {
+      const d = (mx - padL) / (W - padL - padR) * MAXD, a = alt(d), y = Y(a);
+      ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(mx, top - 6); ctx.lineTo(mx, H - bot); ctx.stroke();
+      ctx.beginPath(); ctx.arc(mx, y, 5, 0, 7); ctx.fillStyle = ACCENT; ctx.fill();
+      const lbl = `${d.toFixed(0)} KM · ${Math.round(a / 10) * 10} M`;
+      ctx.font = "800 11px JetBrains Mono, monospace"; const w = ctx.measureText(lbl).width + 14;
+      const bx = Math.min(Math.max(mx - w / 2, padL), W - padR - w);
+      ctx.fillStyle = ink; ctx.fillRect(bx, 2, w, 20); ctx.fillStyle = cssVar("--paper"); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(lbl, bx + 7, 12);
+    }
+    if (k < 1) requestAnimationFrame(draw);
+  }
+  c.addEventListener("pointermove", e => { mx = e.clientX - c.getBoundingClientRect().left; draw(); });
+  c.addEventListener("pointerleave", () => { mx = -1; draw(); });
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { t0 = fxOn() ? performance.now() : 0; draw(); io.disconnect(); } }), { threshold: .3 });
+  io.observe(c);
+  addEventListener("resize", resize);
+  return { resize, draw };
+})();
 
-// Fiches inclinables
 $$(".dossier").forEach(d => {
   d.addEventListener("mousemove", e => {
     if (!fxOn()) return;
@@ -349,7 +536,6 @@ $$(".dossier").forEach(d => {
   d.addEventListener("mouseleave", () => d.style.transform = "");
 });
 
-// Apparitions au défilement
 const revealObs = new IntersectionObserver(es => es.forEach(e => {
   if (!e.isIntersecting) return;
   e.target.classList.add("in");
@@ -358,7 +544,6 @@ const revealObs = new IntersectionObserver(es => es.forEach(e => {
 }), { threshold: .25 });
 $$(".reveal, .block-head [data-scramble], .final [data-scramble]").forEach(el => revealObs.observe(el));
 
-// Horloge
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("fr-FR") + " — HEURE LOCALE"; }, 1000);
 
 /* ---------- 7. CHRONOMÈTRE ---------- */
@@ -375,6 +560,7 @@ function toggleTimer() {
   timerId = setInterval(() => {
     secs++; totalSecs++;
     $("timer").textContent = fmtT(secs); document.title = `● ${fmtT(secs)} — OSINT Hub`;
+    const qa = document.querySelector('[data-qa="chrono"] span'); if (qa) qa.textContent = `Chrono ${fmtT(secs)}`;
     if (secs % 10 === 0) save("totalSecs", totalSecs);
     if (secs % 60 === 0) bump(1);
   }, 1000);
@@ -546,7 +732,6 @@ $("pinToCase").onclick = () => {
   if (note === null) return;
   addEntry({ clue: note || "Point placé sur la carte", gps: fmtLL(...point) });
 };
-// Mesure de distance
 $("measureBtn").onclick = () => {
   if (!map) return;
   measuring = !measuring;
@@ -576,14 +761,13 @@ function refreshCaseMarkers() {
       .bindPopup(`<b>Fiche ${pad(i + 1)}</b><br>${esc(trunc(e.clue || e.hyp || e.gps, 140))}`).addTo(caseMarkers);
   });
 }
-// Recherche d'adresse (Nominatim : 1 requête par seconde maximum)
 let geoTimer;
 $("geoQ").oninput = () => {
   clearTimeout(geoTimer);
   const q = $("geoQ").value.trim(), ll = parseLatLng(q);
   if (!q) return ($("geoResults").innerHTML = "");
   if (ll && /^[-\d.,;\s]+$/.test(q)) { $("geoResults").innerHTML = `<div data-ll="${ll}">→ Aller à ${fmtLL(...ll)}</div>`; return bindGeo(); }
-  geoTimer = setTimeout(async () => {
+  geoTimer = setTimeout(async () => { // Nominatim : 1 requête par seconde maximum
     try {
       const r = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=fr&q=${enc(q)}`)).json();
       $("geoResults").innerHTML = r.map(x => `<div data-ll="${x.lat},${x.lon}">${esc(x.display_name)}</div>`).join("") || "<div>Aucun résultat</div>";
@@ -624,7 +808,6 @@ async function loadImage(file) {
 }
 function renderExif(rows) { $("exif").innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${esc(r[1])}</td></tr>`).join(""); }
 $("file").onchange = e => { loadImage(e.target.files[0]); e.target.value = ""; };
-// Glisser-déposer n'importe où sur la page Photo
 let dragDepth = 0;
 addEventListener("dragenter", e => { if (current === "photo" && e.dataTransfer?.types?.includes("Files")) { dragDepth++; document.body.classList.add("dragging"); } });
 addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
@@ -638,7 +821,6 @@ document.addEventListener("paste", e => {
   const f = [...(e.clipboardData?.files || [])][0];
   if (f?.type.startsWith("image/")) { if (current !== "photo") { go("photo"); setTimeout(() => loadImage(f), 700); } else loadImage(f); }
 });
-// Loupe
 img.onclick = e => { wrapEl.classList.toggle("zoom"); moveZoom(e); };
 img.onmousemove = moveZoom;
 function moveZoom(e) {
@@ -648,7 +830,6 @@ function moveZoom(e) {
   wrapEl.style.transformOrigin = `${Math.max(0, Math.min(1, px)) * 100}% ${Math.max(0, Math.min(1, py)) * 100}%`;
 }
 $("photoView").onmouseleave = () => wrapEl.classList.remove("zoom");
-// Réglages de lecture
 function applyImgFx() {
   const c = $("fxC").value, b = $("fxB").value, s = $("fxS").value;
   $$(".sliders output").forEach((o, i) => o.textContent = [c, b, s][i]);
@@ -678,35 +859,350 @@ $("cluesToCase").onclick = () => {
 };
 
 /* ---------- 11. ENTRAÎNEMENT ---------- */
-let ggMaps = load("ggMaps", [
-  { name: "France", url: "https://www.geoguessr.com/maps" },
-  { name: "Lyon / AURA", url: "https://www.geoguessr.com/maps" },
-  { name: "No Move", url: "https://www.geoguessr.com" }
-]);
+const PROGRAM = window.PROGRAM, RANKS = window.RANKS;
+let progress = load("progress", []);       // étapes cochées à la main
+let quizStats = load("quizStats", {});     // { id: { best, plays, last, date } }
+let flags = load("flags", {});             // { exported: true… }
+
+// --- GeoGuessr : cartes et sessions
+const GG_FRANCE = "https://www.geoguessr.com/maps/france"; // carte officielle « France »
+const GG_AURA = "https://www.geoguessr.com/maps/655254048164cfc43ee03bab"; // carte Lyon / Auvergne-Rhône-Alpes
+let ggMaps = load("ggMaps", [{ name: "France", url: GG_FRANCE }, { name: "Lyon / AURA", url: GG_AURA }]);
+ggMaps = ggMaps
+  .filter(m => !(m.name === "No Move" && /geoguessr\.com\/?$/.test(m.url)))          // « No Move » est un mode, pas une carte
+  .map(m => /geoguessr\.com\/maps\/?$/.test(m.url) || (!m.url && /lyon|aura/i.test(m.name))
+    ? { ...m, url: m.name === "France" ? GG_FRANCE : /lyon|aura/i.test(m.name) ? GG_AURA : "" } : m);
+save("ggMaps", ggMaps);
+let sessions = load("sessions", load("gg", []));
+let ggGoal = load("ggGoal", 20000);
+const GG_MODES = ["Move", "No Move", "NMPZ"];
+
+// --- Badges : [id, nom, description, icône, condition]
+const BADGES = [
+  ["first", "Premier pas", "Valider une étape du programme", "◆", s => s.doneCount >= 1],
+  ["streak3", "Régulier", "3 jours d'activité d'affilée", "3", s => s.streak >= 3],
+  ["streak7", "Discipliné", "7 jours d'affilée", "7", s => s.streak >= 7],
+  ["perfect", "Sans faute", "10/10 à un exercice", "★", s => s.perfect],
+  ["nomove", "Œil de lynx", "5 parties en No Move", "◎", s => s.nm >= 5],
+  ["lyon", "Gone", "5 parties sur la carte Lyon", "L", s => s.lyon >= 5],
+  ["record", "Record", "20 000 points sur une partie", "▲", s => s.maxScore >= 20000],
+  ["memo", "Mémoire de terrain", "10 indices perso dans le mémo", "✎", s => s.userMemo >= 10],
+  ["string", "Tisseur de fils", "5 fils sur un tableau d'enquête", "⌇", s => s.links >= 5],
+  ["archiv", "Archiviste", "Exporter un rapport", "⤓", s => s.exported],
+  ["hours", "Endurant", "5 h d'entraînement chronométré", "◷", s => s.totalSecs >= 18000],
+  ["all", "Enquêteur accompli", "Terminer tout le programme", "V", s => s.allDone]
+];
+
+function computeTraining() {
+  const lyon = sessions.filter(s => /lyon|aura/i.test(s.map || "")).length;
+  const nm = sessions.filter(s => s.mode === "No Move").length;
+  const mv = sessions.filter(s => !s.mode || s.mode === "Move").length;
+  const maxScore = sessions.reduce((m, s) => Math.max(m, +s.score || 0), 0);
+  const qb = id => quizStats[id]?.best || 0;
+  const userMemo = memo.filter(m => !m.builtin).length;
+  const links = Math.max(0, ...cases.map(c => c.links.length));
+  const auto = new Set();
+  if (mv >= 5) auto.add("gg1");
+  if (qb("france") >= 8) auto.add("fr1");
+  if (qb("dep") >= 8) auto.add("dep1");
+  if (userMemo >= 10) auto.add("fr2");
+  if (nm >= 5) auto.add("nm1");
+  if (lyon >= 5) auto.add("nm2");
+  if (qb("shadow") >= 7) auto.add("sh1");
+  if (maxScore >= 20000) auto.add("nm3");
+  if (cases.some(c => c.entries.length >= 5 && c.links.length >= 4)) auto.add("rep1");
+  if (flags.exported) auto.add("rep2");
+  const done = id => auto.has(id) || progress.includes(id);
+  const items = PROGRAM.flatMap((l, li) => l.items.map(it => ({ ...it, lvl: li + 1 })));
+  const doneItems = items.filter(it => done(it.id));
+  const s = { lyon, nm, maxScore, userMemo, links, streak: streak(), totalSecs, exported: !!flags.exported,
+    perfect: Object.values(quizStats).some(q => q.best === 10), doneCount: doneItems.length, allDone: doneItems.length === items.length };
+  const unlocked = BADGES.filter(b => b[4](s)).map(b => b[0]);
+  const xp = doneItems.reduce((a, it) => a + it.xp, 0)
+    + Object.values(quizStats).reduce((a, q) => a + (q.best || 0) * 3, 0)
+    + Math.min(sessions.length * 3, 150) + unlocked.length * 10;
+  let ri = 0; RANKS.forEach((r, i) => { if (xp >= r[0]) ri = i; });
+  const rank = { name: RANKS[ri][1], roman: RANKS[ri][2], min: RANKS[ri][0], next: RANKS[ri + 1] };
+  return { done, items, doneItems, xp, rank, unlocked, s };
+}
+
+let trainReady = false;
+const openGuides = new Set();
+function refreshTraining() {
+  const st = computeTraining();
+  // Rang
+  $("rankNum").textContent = st.rank.roman;
+  $("rankName").textContent = st.rank.name;
+  const nx = st.rank.next;
+  $("xpFill").style.width = (nx ? (st.xp - st.rank.min) / (nx[0] - st.rank.min) * 100 : 100) + "%";
+  $("xpText").textContent = nx ? `${st.xp} XP · encore ${nx[0] - st.xp} XP pour « ${nx[1]} »` : `${st.xp} XP · rang maximal atteint`;
+  // Défis du jour
+  const k = todayKey(), dq = dailyQuizDef(), gd = ggDaily();
+  $("dailyQuizName").textContent = dq.name;
+  $("dailyQuizState").innerHTML = load("quizDaily", "") === k ? '<span class="done">✓ FAIT AUJOURD\'HUI</span>' : "10 QUESTIONS · CLIQUE POUR LANCER";
+  $("dailyGgName").textContent = `${gd.mode} · ${fmtNum(gd.target)} pts`;
+  $("dailyGgState").innerHTML = load("ggDailyDone", "") === k ? '<span class="done">✓ RELEVÉ</span>' : (gd.map ? esc(gd.map.name.toUpperCase()) : "AJOUTE LE LIEN D'UNE CARTE");
+  // Programme
+  const nextIt = st.items.find(it => !st.done(it.id));
+  const actBtn = it => it.quiz ? `<button class="btn sm" data-quiz="${it.quiz}">Lancer l'exercice →</button>`
+    : it.url ? `<a class="btn sm" href="${it.url}" target="_blank" rel="noopener">Ouvrir l'outil ↗</a>`
+    : it.gg ? `<button class="btn sm" data-ttab-go="gg">Enregistrer une session →</button>`
+    : it.memo ? `<button class="btn sm" data-ttab-go="memo">Ouvrir le mémo →</button>`
+    : it.go ? `<a class="btn sm" href="#${it.go}">Ouvrir le module →</a>` : "";
+  const guide = it => `<div class="guide">
+      <div class="g-col"><h5 class="mono">POURQUOI</h5><p>${esc(it.why)}</p>
+        <h5 class="mono">C'EST FAIT QUAND…</h5><p>${esc(it.done)}</p>
+        ${it.tip ? `<p class="g-tip"><b class="mono">ASTUCE</b> ${esc(it.tip)}</p>` : ""}</div>
+      <div class="g-col"><h5 class="mono">COMMENT FAIRE</h5><ol>${it.how.map(h => `<li>${esc(h)}</li>`).join("")}</ol>
+        <div class="row wrap-row">${actBtn(it)}${it.auto ? `<span class="mono small muted">Validation automatique</span>` : `<span class="mono small muted">Coche la case quand c'est fait</span>`}</div></div></div>`;
+  $("program").innerHTML = `
+    <div class="how-it-works">
+      <div><span class="mono hw-n">1</span><b>Suis l'ordre</b><p>Les niveaux vont du plus simple au plus avancé. Commence par l'étape mise en avant ci-dessous.</p></div>
+      <div><span class="mono hw-n">2</span><b>Ouvre le guide</b><p>Chaque étape explique pourquoi, comment, et à quoi on reconnaît qu'elle est terminée.</p></div>
+      <div><span class="mono hw-n">3</span><b>Valide</b><p>Les étapes <em class="mono tag">AUTO</em> se cochent seules. Les autres, coche-les toi-même quand le critère est rempli.</p></div>
+      <div><span class="mono hw-n">4</span><b>Un peu chaque jour</b><p>20 à 30 minutes par jour valent mieux que 3 heures le dimanche : ta série de jours le montre.</p></div>
+    </div>
+    ${nextIt ? `<section class="next-step">
+      <div class="ns-head"><span class="mono">▶ TON PROCHAIN PAS · NIV. ${nextIt.lvl} · ${esc(PROGRAM[nextIt.lvl - 1].name.toUpperCase())}</span><span class="mono">${nextIt.time ? "≈ " + esc(nextIt.time) + " · " : ""}+${nextIt.xp} XP</span></div>
+      <h3>${esc(nextIt.t)}</h3>${guide(nextIt)}</section>`
+    : `<section class="next-step"><h3>Programme terminé. Bravo.</h3><p>Continue avec les défis du jour, Gralhix et tes propres objectifs.</p></section>`}
+    ${PROGRAM.map((L, li) => {
+    const d = L.items.filter(it => st.done(it.id)).length, pct = Math.round(d / L.items.length * 100);
+    const isOpenLvl = nextIt && nextIt.lvl === li + 1;
+    return `<article class="level ${d === L.items.length ? "complete" : ""} ${isOpenLvl ? "current" : ""}">
+      <header><span class="lv-n mono">NIV. ${li + 1}</span><div><h3>${L.name}</h3><p class="small muted">${L.desc}</p></div><span class="lv-p mono">${d}/${L.items.length}</span></header>
+      <div class="lv-bar"><i style="width:${pct}%"></i></div>
+      <p class="lv-goal"><b class="mono">OBJECTIF</b> ${esc(L.goal)}</p>
+      <ul>${L.items.map(it => {
+        const ok = st.done(it.id), open = openGuides.has(it.id);
+        return `<li class="${ok ? "done" : ""} ${open ? "open" : ""} ${nextIt && it.id === nextIt.id ? "is-next" : ""}">
+          <div class="it-row"><label class="pchk" title="${it.auto ? "Validée automatiquement" : "Cocher quand c'est fait"}"><input type="checkbox" data-pid="${it.id}" ${ok ? "checked" : ""} ${it.auto ? "disabled" : ""}><span></span></label>
+          <button class="it-t" data-guide="${it.id}"><span class="t">${esc(it.t)}</span>${it.auto ? '<em class="mono tag">AUTO</em>' : ""}${it.time ? `<span class="mono small muted it-time">${esc(it.time)}</span>` : ""}<span class="xp mono">+${it.xp}</span><span class="mono chev">${open ? "−" : "+"}</span></button></div>
+          ${open ? guide(it) : ""}</li>`;
+      }).join("")}</ul></article>`;
+  }).join("")}`;
+  $$("[data-guide]").forEach(b => b.onclick = () => { const id = b.dataset.guide; openGuides.has(id) ? openGuides.delete(id) : openGuides.add(id); refreshTraining(); });
+  $$("[data-pid]").forEach(c => c.onchange = () => {
+    progress = c.checked ? [...new Set([...progress, c.dataset.pid])] : progress.filter(x => x !== c.dataset.pid);
+    save("progress", progress); if (c.checked) { bump(3); toast("Étape validée"); } refreshTraining();
+  });
+  $$("#program [data-quiz]").forEach(b => b.onclick = () => startQuiz(b.dataset.quiz));
+  $$("#program [data-ttab-go]").forEach(b => b.onclick = () => { setTrainTab(b.dataset.ttabGo); window.scrollTo({ top: $("trainTabs").offsetTop - 80, behavior: "smooth" }); });
+  // Badges
+  $("badges").innerHTML = BADGES.map(b => `<div class="badge-st ${st.unlocked.includes(b[0]) ? "on" : ""}" title="${b[2]}"><span class="b-ico">${b[3]}</span><b>${b[1]}</b><small>${b[2]}</small></div>`).join("");
+  $("badgeCount").textContent = `${st.unlocked.length}/${BADGES.length}`;
+  const prev = load("badges", []), fresh = st.unlocked.filter(b => !prev.includes(b));
+  if (fresh.length || prev.length !== st.unlocked.length) save("badges", st.unlocked);
+  if (fresh.length && trainReady) { const b = BADGES.find(x => x[0] === fresh[0]); setTimeout(() => toast(`Badge débloqué : ${b[1]}`), 500); }
+  trainReady = true;
+  return st;
+}
+
+function setTrainTab(t) {
+  $$("#trainTabs button").forEach(b => b.classList.toggle("on", b.dataset.ttab === t));
+  $$(".tpane").forEach(p => p.hidden = p.dataset.tpane !== t);
+  save("trainTab", t);
+  if (t === "gg") setTimeout(drawChart, 30);
+}
+$$("#trainTabs button").forEach(b => b.onclick = () => setTrainTab(b.dataset.ttab));
+
+// --- Défis perso (liste libre)
+let tasks = load("tasks", []).map(x => ({ t: x.t, d: !!x.d }));
+function renderTasks() {
+  $("taskList").innerHTML = tasks.length
+    ? tasks.map((x, i) => `<li class="${x.d ? "done" : ""}"><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}><span class="t">${esc(x.t)}</span><button class="del" data-x="${i}">✕</button></li>`).join("")
+    : `<li class="empty">Ajoute tes propres objectifs (ex. « résoudre le défi Gralhix n° 12 »).</li>`;
+  $$("#taskList input").forEach(c => c.onchange = () => { tasks[c.dataset.i].d = c.checked; save("tasks", tasks); if (c.checked) { bump(2); toast("Défi validé"); } renderTasks(); });
+  $$("#taskList .del").forEach(d => d.onclick = () => { tasks.splice(d.dataset.x, 1); save("tasks", tasks); renderTasks(); });
+  const done = tasks.filter(x => x.d).length, pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  $("taskBar").style.width = pct + "%"; $("taskPct").textContent = tasks.length ? `${done}/${tasks.length} · ${pct} %` : "";
+}
+$("taskAdd").onclick = () => { const v = $("taskInput").value.trim(); if (!v) return; tasks.push({ t: v, d: false }); save("tasks", tasks); $("taskInput").value = ""; renderTasks(); };
+$("taskInput").onkeydown = e => e.key === "Enter" && $("taskAdd").click();
+
+// --- Exercices (quiz)
+const mcq = (q, correct, wrong, explain) => { const opts = shuffle([correct, ...wrong.slice(0, 3)]); return { q, opts, a: opts.indexOf(correct), explain }; };
+function genDep(scope) {
+  const pool = scope === "aura" ? window.DEPTS.filter(d => window.AURA.includes(d[0])) : window.DEPTS;
+  return pick(pool, 10).map(d => {
+    const o = pick(pool.filter(x => x !== d), 3), t = (Math.random() * 4) | 0, ex = `${d[0]} = ${d[1]}, préfecture : ${d[2]}.`;
+    if (t === 0) return mcq(`Quel département porte le numéro ${d[0]} ?`, d[1], o.map(x => x[1]), ex);
+    if (t === 1) return mcq(`Quel est le numéro du département « ${d[1]} » ?`, d[0], o.map(x => x[0]), ex);
+    if (t === 2) return mcq(`Quelle est la préfecture du département « ${d[1]} » (${d[0]}) ?`, d[2], o.map(x => x[2]), ex);
+    return mcq(`${d[2]} est la préfecture de quel département ?`, `${d[1]} (${d[0]})`, o.map(x => `${x[1]} (${x[0]})`), ex);
+  });
+}
+const CARDINAL = d => ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"][Math.round(d / 45) % 8];
+function genShadow() {
+  if (!window.SunCalc) return null;
+  const qs = [], fmt = d => d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  for (let guard = 0; qs.length < 10 && guard < 300; guard++) {
+    const [city, lat, lng] = window.SHADOW_CITIES[(Math.random() * window.SHADOW_CITIES.length) | 0];
+    const y = new Date().getFullYear(), day = new Date(y, 0, 1 + ((Math.random() * 365) | 0), 12);
+    const t = SunCalc.getTimes(day, lat, lng);
+    const start = t.sunrise.getTime() + 90 * 6e4, end = t.sunset.getTime() - 90 * 6e4;
+    if (!(end > start)) continue;
+    const when = new Date(start + Math.random() * (end - start));
+    when.setMinutes(when.getMinutes() < 30 ? 0 : 30, 0, 0);
+    const p = SunCalc.getPosition(when, lat, lng);
+    if (p.altitude < .08) continue;
+    const az = (p.azimuth * 180 / Math.PI + 180) % 360, sh = (az + 180) % 360, ratio = 1 / Math.tan(p.altitude);
+    const cands = [-4.5, -3.5, -2.5, -1.5, 1.5, 2.5, 3.5, 4.5].map(k => new Date(when.getTime() + k * 36e5)).filter(d => d >= t.sunrise && d <= t.sunset);
+    if (cands.length < 3) continue;
+    qs.push(mcq(`${city}, le ${when.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}. L'ombre d'un poteau vertical pointe vers ${sh.toFixed(0)}° (${CARDINAL(sh)}) et mesure environ ${ratio.toFixed(1).replace(".", ",")} fois sa hauteur. Quelle heure est-il ?`,
+      fmt(when), pick(cands, 3).map(fmt),
+      `Soleil à ${az.toFixed(0)}° d'azimut et ${(p.altitude * 180 / Math.PI).toFixed(0)}° de hauteur. L'ombre part à l'opposé du soleil : vers l'ouest le matin, vers le nord autour du midi solaire (entre 12 h 30 et 14 h 30 en France selon la saison et la longitude), vers l'est le soir. Plus elle est longue, plus le soleil est bas.`));
+  }
+  return qs;
+}
+const QUIZZES = [
+  { id: "dep", name: "Départements", desc: "Numéros, noms et préfectures. Indispensable pour lire les plaques et les panneaux.", opts: [["fr", "France entière"], ["aura", "Auvergne-Rhône-Alpes"]], gen: o => genDep(o) },
+  { id: "france", name: "Indices France & Lyon", desc: "Signalisation, plaques, bornes, architecture et repères lyonnais.", gen: () => pick(window.BANK_FRANCE, 10).map(b => mcq(...b)) },
+  { id: "osint", name: "Outils & méthode", desc: "Le bon outil pour la bonne question, et les règles du terrain.", gen: () => pick(window.BANK_OSINT, 10).map(b => mcq(...b)) },
+  { id: "shadow", name: "Ombres & heure", desc: "Chronolocalisation : retrouver l'heure à partir de la direction et de la longueur d'une ombre.", gen: genShadow, needs: "SunCalc" }
+];
+const dailyQuizDef = () => QUIZZES[dayIndex() % QUIZZES.length];
+let quiz = null, quizTimer = null;
+
+function renderQuizList() {
+  const dq = dailyQuizDef();
+  $("quizList").innerHTML = QUIZZES.map(q => {
+    const st = quizStats[q.id] || {};
+    return `<article class="qcard ${q.id === dq.id ? "daily" : ""}">
+      <header><span class="mono">${q.id === dq.id ? "★ QUIZ DU JOUR" : "EXERCICE"}</span><span class="mono">${st.best != null ? `RECORD ${st.best}/10` : "JAMAIS JOUÉ"}</span></header>
+      <h3>${q.name}</h3><p>${q.desc}</p>
+      <div class="q-best">${Array.from({ length: 10 }, (_, i) => `<i class="${i < (st.best || 0) ? "on" : ""}"></i>`).join("")}</div>
+      ${q.opts ? `<select class="sm-sel" data-qopt="${q.id}">${q.opts.map(o => `<option value="${o[0]}">${o[1]}</option>`).join("")}</select>` : ""}
+      <div class="q-foot"><span class="mono small muted">${st.plays || 0} partie(s)${st.last != null ? ` · dernière ${st.last}/10` : ""}</span><button class="btn" data-start="${q.id}">Lancer →</button></div>
+    </article>`;
+  }).join("");
+  $$("[data-start]").forEach(b => b.onclick = () => startQuiz(b.dataset.start, document.querySelector(`[data-qopt="${b.dataset.start}"]`)?.value));
+}
+function startQuiz(id, opt) {
+  const def = QUIZZES.find(q => q.id === id); if (!def) return;
+  if (def.needs && !window[def.needs]) return toast("Exercice indisponible : le calcul solaire nécessite une connexion");
+  const qs = def.gen(opt || def.opts?.[0][0]);
+  if (!qs || qs.length < 5) return toast("Impossible de générer l'exercice, réessaie");
+  setTrainTab("drills");
+  quiz = { def, qs, i: 0, score: 0, answered: false, start: Date.now(), res: [], errors: [], done: false };
+  $("quizList").hidden = true; $("quizBox").hidden = false;
+  clearInterval(quizTimer);
+  quizTimer = setInterval(() => { const t = $("qzTime"); if (t && quiz && !quiz.done) t.textContent = fmtT(Math.round((Date.now() - quiz.start) / 1000)).slice(3); }, 1000);
+  renderQ();
+  $("quizBox").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+const startDailyQuiz = () => { go("training"); setTimeout(() => startQuiz(dailyQuizDef().id), current === "training" ? 0 : 500); };
+function renderQ() {
+  const q = quiz.qs[quiz.i], n = quiz.qs.length;
+  quiz.answered = false;
+  $("quizBox").innerHTML = `
+    <div class="qz-head mono"><span>${quiz.def.name.toUpperCase()}</span><span>QUESTION ${quiz.i + 1}/${n}</span><span>SCORE ${quiz.score}</span><span id="qzTime">${fmtT(Math.round((Date.now() - quiz.start) / 1000)).slice(3)}</span><button class="btn ghost sm" id="qzQuit">Quitter</button></div>
+    <div class="qz-bar" style="grid-template-columns:repeat(${n},1fr)">${quiz.qs.map((_, k) => `<i class="${k < quiz.i ? (quiz.res[k] ? "ok" : "ko") : k === quiz.i ? "cur" : ""}"></i>`).join("")}</div>
+    <h3 class="qz-q">${esc(q.q)}</h3>
+    <div class="qz-opts">${q.opts.map((o, k) => `<button class="qz-opt" data-k="${k}"><kbd>${k + 1}</kbd><span>${esc(o)}</span></button>`).join("")}</div>
+    <div class="qz-fb" id="qzFb"></div>`;
+  $$(".qz-opt").forEach(b => b.onclick = () => answer(+b.dataset.k));
+  $("qzQuit").onclick = quitQuiz;
+}
+function answer(k) {
+  if (!quiz || quiz.answered || quiz.done) return;
+  const q = quiz.qs[quiz.i], ok = k === q.a;
+  quiz.answered = true; quiz.res[quiz.i] = ok;
+  if (ok) quiz.score++; else quiz.errors.push({ q: q.q, a: q.opts[q.a], you: q.opts[k] });
+  $$(".qz-opt").forEach((b, j) => { b.disabled = true; if (j === q.a) b.classList.add("right"); if (j === k && !ok) b.classList.add("wrong"); });
+  $$(".qz-bar i")[quiz.i].className = ok ? "ok" : "ko";
+  const last = quiz.i === quiz.qs.length - 1;
+  $("qzFb").innerHTML = `<p class="${ok ? "" : "ko"}"><b>${ok ? "Exact." : `Raté — la réponse était : ${esc(q.opts[q.a])}.`}</b> ${esc(q.explain || "")}</p>
+    <div class="row"><button class="btn" id="qzNext">${last ? "Voir le résultat" : "Question suivante"} <span>→</span></button><span class="mono small muted">ou touche Entrée</span></div>`;
+  $("qzNext").onclick = nextQ;
+  $("qzNext").focus({ preventScroll: true });
+}
+function nextQ() { if (!quiz?.answered) return; quiz.i++; quiz.i >= quiz.qs.length ? finishQuiz() : renderQ(); }
+function finishQuiz() {
+  quiz.done = true; clearInterval(quizTimer);
+  const n = quiz.qs.length, sc = Math.round(quiz.score / n * 10), time = Math.round((Date.now() - quiz.start) / 1000), id = quiz.def.id;
+  const prev = quizStats[id] || {}, record = prev.best == null || sc > prev.best;
+  quizStats[id] = { best: Math.max(prev.best ?? 0, sc), plays: (prev.plays || 0) + 1, last: sc, date: todayKey() };
+  save("quizStats", quizStats);
+  bump(sc >= 8 ? 4 : 2);
+  let dailyMsg = "";
+  if (id === dailyQuizDef().id && load("quizDaily", "") !== todayKey()) { save("quizDaily", todayKey()); bump(3); dailyMsg = " Quiz du jour validé."; }
+  const msg = sc === 10 ? "Sans faute." : sc >= 8 ? "Très solide." : sc >= 5 ? "Bonne base, encore un effort." : "À retravailler : relis les explications ci-dessous.";
+  $("quizBox").innerHTML = `
+    <div class="qz-head mono"><span>${quiz.def.name.toUpperCase()} — RÉSULTAT</span><span>${fmtT(time).slice(3)}</span></div>
+    <div class="qz-res">
+      <div class="qz-score">${sc}<small>/10</small></div>
+      <p class="lead" style="margin:10px auto 0">${msg}${record && prev.best != null ? " Nouveau record !" : ""}${dailyMsg}</p>
+      <div class="row"><button class="btn" id="qzAgain">Rejouer <span>↻</span></button><button class="btn ghost" id="qzBack">Tous les exercices</button></div>
+      ${quiz.errors.length ? `<ul class="qz-err">${quiz.errors.map(e => `<li>${esc(e.q)}<br><s>${esc(e.you)}</s> → <b>${esc(e.a)}</b></li>`).join("")}</ul>` : ""}
+    </div>`;
+  $("qzAgain").onclick = () => startQuiz(id, quiz.def.opts ? document.querySelector(`[data-qopt="${id}"]`)?.value : undefined);
+  $("qzBack").onclick = quitQuiz;
+  renderQuizList(); refreshTraining();
+}
+function quitQuiz() { clearInterval(quizTimer); quiz = null; $("quizBox").hidden = true; $("quizBox").innerHTML = ""; $("quizList").hidden = false; renderQuizList(); }
+$("dailyQuizBtn").onclick = () => startQuiz(dailyQuizDef().id);
+$("dailyGgBtn").onclick = () => setTrainTab("gg");
+
+// --- GeoGuessr
+function ggDaily() {
+  const r = seeded(dayIndex() * 7919 + 13);
+  const maps = ggMaps.filter(m => m.url);
+  const mapPick = maps.length ? maps[(r() * maps.length) | 0] : null;
+  return { map: mapPick, mode: GG_MODES[(r() * 3) | 0], c: window.GG_CONSTRAINTS[(r() * window.GG_CONSTRAINTS.length) | 0], target: [12000, 15000, 17500, 20000][(r() * 4) | 0] };
+}
+function renderGgDaily() {
+  const d = ggDaily(), done = load("ggDailyDone", "") === todayKey();
+  $("ggDailyDate").textContent = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long" }).toUpperCase();
+  $("ggDaily").innerHTML = `<div class="dly ${done ? "done" : ""}">
+    <div class="dly-grid"><div><small>CARTE</small><b>${d.map ? esc(d.map.name) : "—"}</b></div><div><small>MODE</small><b>${d.mode}</b></div><div><small>OBJECTIF</small><b>${fmtNum(d.target)}</b></div></div>
+    <p class="dly-c">${esc(d.c)}</p>
+    <div class="row">${d.map ? `<a class="btn" href="${esc(d.map.url)}" target="_blank" rel="noopener">Jouer <span>↗</span></a>` : `<span class="small muted">Ajoute le lien d'une carte ci-dessous pour activer le défi.</span>`}
+      <span class="mono small ${done ? "ok-txt" : "muted"}">${done ? "✓ DÉFI RELEVÉ AUJOURD'HUI" : "Validé en enregistrant une session sur cette carte, dans ce mode, au-dessus de l'objectif."}</span></div></div>`;
+}
 function renderGgMaps() {
-  $("ggLinks").innerHTML = ggMaps.map((m, i) => `<div class="gg-link"><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.name)}</a>
-    <button class="del" data-edit="${i}" title="Modifier le lien">✎</button><button class="del" data-rm="${i}" title="Supprimer">✕</button></div>`).join("")
+  $("ggLinks").innerHTML = ggMaps.map((m, i) => `<div class="gg-link">${m.url
+      ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.name)}</a>`
+      : `<button class="cfg" data-edit="${i}">${esc(m.name)} — ajouter le lien ✎</button>`}
+    <button class="del" data-edit="${i}" title="Modifier">✎</button><button class="del" data-rm="${i}" title="Supprimer">✕</button></div>`).join("")
     || `<p class="empty">Aucune carte. Ajoute tes cartes GeoGuessr avec « + Carte ».</p>`;
-  $("ggMap").innerHTML = ggMaps.map(m => `<option>${esc(m.name)}</option>`).join("") || "<option>Libre</option>";
-  $$("[data-edit]").forEach(b => b.onclick = () => {
+  const cur = $("ggMap").value;
+  $("ggMap").innerHTML = ggMaps.map(m => `<option>${esc(m.name)}</option>`).join("") + "<option>Autre</option>";
+  if (cur) $("ggMap").value = cur;
+  const names = [...new Set([...ggMaps.map(m => m.name), ...sessions.map(s => s.map).filter(Boolean)])];
+  const fcur = $("ggFMap").value;
+  $("ggFMap").innerHTML = `<option value="">Toutes cartes</option>` + names.map(n => `<option>${esc(n)}</option>`).join("");
+  $("ggFMap").value = names.includes(fcur) ? fcur : "";
+  $$("#ggLinks [data-edit]").forEach(b => b.onclick = () => {
     const m = ggMaps[b.dataset.edit];
     const name = prompt("Nom de la carte :", m.name); if (name === null) return;
-    const url = prompt("Lien de la carte (copie l'adresse depuis GeoGuessr) :", m.url); if (url === null) return;
-    ggMaps[b.dataset.edit] = { name: name || m.name, url: url || m.url }; save("ggMaps", ggMaps); renderGgMaps();
+    const url = prompt("Lien de la carte (copie l'adresse de la page de la carte sur GeoGuessr) :", m.url || "https://www.geoguessr.com/maps/"); if (url === null) return;
+    ggMaps[b.dataset.edit] = { name: name.trim() || m.name, url: /^https?:\/\/\S+\/maps\/\S+/.test(url.trim()) ? url.trim() : "" };
+    if (url.trim() && !ggMaps[b.dataset.edit].url) toast("Lien non reconnu : il doit ressembler à https://www.geoguessr.com/maps/…");
+    save("ggMaps", ggMaps); renderGgMaps(); renderGgDaily(); refreshTraining();
   });
-  $$("[data-rm]").forEach(b => b.onclick = () => { if (confirm("Supprimer cette carte ?")) { ggMaps.splice(b.dataset.rm, 1); save("ggMaps", ggMaps); renderGgMaps(); } });
+  $$("#ggLinks [data-rm]").forEach(b => b.onclick = () => { if (confirm("Supprimer cette carte ?")) { ggMaps.splice(b.dataset.rm, 1); save("ggMaps", ggMaps); renderGgMaps(); renderGgDaily(); } });
 }
 $("ggAddMap").onclick = () => {
   const name = prompt("Nom de la carte :"); if (!name) return;
-  const url = prompt("Lien de la carte :", "https://www.geoguessr.com/maps/"); if (!url) return;
-  ggMaps.push({ name, url }); save("ggMaps", ggMaps); renderGgMaps();
+  const url = prompt("Lien de la carte :", "https://www.geoguessr.com/maps/"); if (url === null) return;
+  ggMaps.push({ name: name.trim(), url: /^https?:\/\/\S+\/maps\/\S+/.test(url.trim()) ? url.trim() : "" });
+  save("ggMaps", ggMaps); renderGgMaps(); renderGgDaily();
 };
-let sessions = load("sessions", load("gg", []));
+const ggFiltered = () => { const fm = $("ggFMap").value, fo = $("ggFMode").value; return sessions.filter(s => (!fm || s.map === fm) && (!fo || (s.mode || "Move") === fo)); };
 function renderSessions() {
-  $("ggList").innerHTML = sessions.length
-    ? sessions.slice(0, 10).map((s, i) => `<li><span class="t mono small">${esc(s.date)} — ${esc(s.map)}</span><b class="mono">${s.score}</b><button class="del" data-i="${i}">✕</button></li>`).join("")
-    : `<li class="empty">Aucune session enregistrée</li>`;
-  $$("#ggList .del").forEach(d => d.onclick = () => { sessions.splice(d.dataset.i, 1); save("sessions", sessions); renderSessions(); });
+  const fs = ggFiltered(), sc = fs.map(s => +s.score);
+  const l5 = sc.slice(0, 5), p5 = sc.slice(5, 10);
+  let trend = "—", cls = "";
+  if (l5.length >= 3 && p5.length >= 3) { const d = Math.round(mean(l5) - mean(p5)); trend = (d >= 0 ? "+" : "") + fmtNum(d); cls = d >= 0 ? "up" : "down"; }
+  const kpi = (l, v, c = "") => `<div class="kpi"><small>${l}</small><b class="${c}">${v}</b></div>`;
+  $("ggKpis").innerHTML = kpi("PARTIES", fs.length) + kpi("MOYENNE", sc.length ? fmtNum(mean(sc)) : "—") + kpi("RECORD", sc.length ? fmtNum(Math.max(...sc)) : "—") + kpi("TENDANCE", trend, cls);
+  $("ggCount").textContent = `${fs.length} SESSION${fs.length > 1 ? "S" : ""}`;
+  $("ggList").innerHTML = fs.length ? fs.slice(0, 15).map(s => `<li>
+      <div class="sess-top"><span class="t mono small">${esc(s.date)} — ${esc(s.map)}</span><span class="mode-tag">${esc(s.mode || "Move")}</span>${s.time ? `<span class="mono small muted">${s.time} min</span>` : ""}<b class="mono">${fmtNum(+s.score)}</b><button class="del" data-si="${sessions.indexOf(s)}">✕</button></div>
+      ${s.note ? `<p class="sess-note">${esc(s.note)}</p>` : ""}</li>`).join("")
+    : `<li class="empty">Aucune session${$("ggFMap").value || $("ggFMode").value ? " pour ce filtre" : ""}.</li>`;
+  $$("#ggList [data-si]").forEach(d => d.onclick = () => { if (confirm("Supprimer cette session ?")) { sessions.splice(+d.dataset.si, 1); save("sessions", sessions); renderSessions(); refreshTraining(); } });
   drawChart();
 }
 function drawChart() {
@@ -715,48 +1211,85 @@ function drawChart() {
   c.width = W * dpr; c.height = H * dpr;
   const ctx = c.getContext("2d"); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
   const ink = cssVar("--ink"), muted = cssVar("--muted");
-  const pts = sessions.slice(0, 20).reverse().map(s => +s.score);
+  const pts = ggFiltered().slice(0, 20).reverse().map(s => +s.score);
   ctx.font = "11px JetBrains Mono, monospace";
   if (pts.length < 2) { ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.fillText("LA COURBE APPARAÎT À PARTIR DE 2 SESSIONS", W / 2, H / 2); $("ggAvg").textContent = ""; return; }
-  const max = Math.max(...pts), min = Math.min(...pts), p = 16;
-  const X = i => p + i * (W - p * 2) / (pts.length - 1), Y = v => H - p - (v - min) / ((max - min) || 1) * (H - p * 2);
+  let max = Math.max(...pts), min = Math.min(...pts);
+  if (ggGoal) { max = Math.max(max, ggGoal); min = Math.min(min, ggGoal); }
+  const p = 16, X = i => p + i * (W - p * 2) / (pts.length - 1), Y = v => H - p - (v - min) / ((max - min) || 1) * (H - p * 2);
   ctx.strokeStyle = muted; ctx.globalAlpha = .3; ctx.setLineDash([2, 4]);
   for (let k = 0; k <= 4; k++) { const y = p + k * (H - p * 2) / 4; ctx.beginPath(); ctx.moveTo(p, y); ctx.lineTo(W - p, y); ctx.stroke(); }
-  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.globalAlpha = 1;
+  if (ggGoal) {
+    ctx.setLineDash([8, 5]); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(p, Y(ggGoal)); ctx.lineTo(W - p, Y(ggGoal)); ctx.stroke();
+    ctx.fillStyle = ACCENT; ctx.textAlign = "right"; ctx.fillText(`OBJECTIF ${fmtNum(ggGoal)}`, W - p, Y(ggGoal) - 6);
+  }
+  ctx.setLineDash([]);
   ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
   ctx.lineTo(X(pts.length - 1), H - p); ctx.lineTo(X(0), H - p); ctx.fillStyle = ACCENT + "26"; ctx.fill();
   ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
   ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.stroke();
-  pts.forEach((v, i) => { ctx.fillStyle = v === max ? ACCENT : ink; ctx.fillRect(X(i) - 3.5, Y(v) - 3.5, 7, 7); });
-  const avg = Math.round(pts.reduce((a, b) => a + b, 0) / pts.length);
-  $("ggAvg").textContent = `MOYENNE ${avg} · MEILLEUR ${max} · ${pts.length} DERNIÈRES SESSIONS`;
+  const best = Math.max(...pts);
+  pts.forEach((v, i) => { ctx.fillStyle = v === best ? ACCENT : ink; ctx.fillRect(X(i) - 3.5, Y(v) - 3.5, 7, 7); });
+  $("ggAvg").textContent = `MOYENNE ${fmtNum(mean(pts))} · MEILLEUR ${fmtNum(best)} · ${pts.length} DERNIÈRES SESSIONS`;
 }
 $("ggAdd").onclick = () => {
-  const v = $("ggScore").value; if (v === "") return toast("Saisis un score");
-  sessions.unshift({ date: new Date().toLocaleDateString("fr-FR"), map: $("ggMap").value, score: +v });
-  save("sessions", sessions); bump(2); $("ggScore").value = ""; renderSessions(); toast("Session enregistrée");
+  const v = $("ggScore").value;
+  if (v === "") return toast("Saisis un score");
+  const score = +v; if (score < 0 || score > 25000) return toast("Le score doit être entre 0 et 25 000");
+  const s = { date: new Date().toLocaleDateString("fr-FR"), ts: new Date().toISOString(), map: $("ggMap").value, mode: $("ggMode").value, score,
+    time: $("ggTime").value ? +$("ggTime").value : null, note: $("ggNote").value.trim() };
+  const prevBest = Math.max(0, ...sessions.filter(x => x.map === s.map && (x.mode || "Move") === s.mode).map(x => +x.score));
+  sessions.unshift(s); save("sessions", sessions); bump(2);
+  const d = ggDaily();
+  if (load("ggDailyDone", "") !== todayKey() && d.map && s.map === d.map.name && s.mode === d.mode && score >= d.target) { save("ggDailyDone", todayKey()); bump(5); toast("Défi du jour relevé !"); }
+  else if (prevBest && score > prevBest) toast("Nouveau record sur cette carte et ce mode !");
+  else toast("Session enregistrée");
+  ["ggScore", "ggTime", "ggNote"].forEach(id => $(id).value = "");
+  renderGgMaps(); renderSessions(); renderGgDaily(); refreshTraining();
 };
 $("ggScore").onkeydown = e => e.key === "Enter" && $("ggAdd").click();
+$("ggFMap").onchange = $("ggFMode").onchange = renderSessions;
+$("ggGoal").onchange = e => { ggGoal = Math.max(0, +e.target.value || 0); save("ggGoal", ggGoal); drawChart(); };
 addEventListener("resize", () => current === "training" && drawChart());
 
-let tasks = load("tasks", [
-  { t: "Gralhix — premier défi de géolocalisation", d: false },
-  { t: "Bellingcat — guide de géolocalisation", d: false },
-  { t: "Maîtriser la recherche d'image inversée (Lens, Yandex, TinEye)", d: false },
-  { t: "Configurer un navigateur dédié (OPSEC)", d: false }
-]).map(x => ({ t: x.t, d: !!x.d }));
-function renderTasks() {
-  $("taskList").innerHTML = tasks.length
-    ? tasks.map((x, i) => `<li class="${x.d ? "done" : ""}"><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}><span class="t">${esc(x.t)}</span><button class="del" data-x="${i}">✕</button></li>`).join("")
-    : `<li class="empty">Ajoute ton premier défi</li>`;
-  $$("#taskList input").forEach(c => c.onchange = () => { tasks[c.dataset.i].d = c.checked; save("tasks", tasks); if (c.checked) { bump(3); toast("Défi validé"); } renderTasks(); });
-  $$("#taskList .del").forEach(d => d.onclick = () => { tasks.splice(d.dataset.x, 1); save("tasks", tasks); renderTasks(); });
-  const done = tasks.filter(x => x.d).length, pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
-  $("taskBar").style.width = pct + "%"; $("taskPct").textContent = `${done}/${tasks.length} · ${pct} %`;
+// --- Mémo d'indices
+let memo = load("memo", null);
+if (!Array.isArray(memo)) memo = window.MEMO_BUILTIN.map(m => ({ ...m, id: uid(), builtin: true, date: new Date().toISOString() }));
+let memoFilter = "";
+$("memoCat").innerHTML = window.MEMO_CATS.map(c => `<option>${c}</option>`).join("");
+function memoVisible() { const q = norm($("memoQ").value); return memo.filter(m => (!memoFilter || m.cat === memoFilter) && (!q || norm(`${m.cat} ${m.zone} ${m.text}`).includes(q))); }
+function renderMemo() {
+  const counts = c => memo.filter(m => !c || m.cat === c).length;
+  $("memoChips").innerHTML = ["", ...window.MEMO_CATS].filter(c => !c || counts(c)).map(c => `<button class="chip ${c === memoFilter ? "on" : ""}" data-cat="${esc(c)}">${c || "Tout"}<small>${counts(c)}</small></button>`).join("");
+  $$("#memoChips .chip").forEach(b => b.onclick = () => { memoFilter = b.dataset.cat; renderMemo(); });
+  const list = memoVisible();
+  $("memoGrid").innerHTML = list.length ? list.map(m => `<article class="memo-card">
+      <div class="mm-head"><span class="mm-cat">${esc(m.cat)}</span><button class="del" data-mdel="${m.id}" title="Supprimer">✕</button></div>
+      <span class="mm-zone">${esc(m.zone || "—")}</span><p>${esc(m.text)}</p>
+      <div class="mm-foot"><span>${m.builtin ? "INDICE DE BASE" : new Date(m.date).toLocaleDateString("fr-FR")}</span>${m.src ? `<a href="${esc(m.src)}" target="_blank" rel="noopener">source ↗</a>` : ""}</div></article>`).join("")
+    : `<p class="empty">Aucun indice ne correspond.</p>`;
+  $$("[data-mdel]").forEach(b => b.onclick = () => { if (confirm("Supprimer cet indice ?")) { memo = memo.filter(m => m.id !== b.dataset.mdel); save("memo", memo); renderMemo(); refreshTraining(); } });
 }
-$("taskAdd").onclick = () => { const v = $("taskInput").value.trim(); if (!v) return; tasks.push({ t: v, d: false }); save("tasks", tasks); $("taskInput").value = ""; renderTasks(); };
-$("taskInput").onkeydown = e => e.key === "Enter" && $("taskAdd").click();
-onEnter.training = () => setTimeout(drawChart, 40);
+$("memoQ").oninput = renderMemo;
+$("memoAdd").onclick = () => {
+  const text = $("memoText").value.trim(); if (!text) return toast("Décris l'indice");
+  const src = $("memoSrc").value.trim();
+  memo.unshift({ id: uid(), cat: $("memoCat").value, zone: $("memoZone").value.trim(), text, src: /^https?:\/\//.test(src) ? src : "", date: new Date().toISOString() });
+  save("memo", memo); bump(1);
+  ["memoZone", "memoText", "memoSrc"].forEach(id => $(id).value = "");
+  renderMemo(); refreshTraining(); toast("Indice ajouté au mémo");
+};
+$("memoReview").onclick = () => {
+  const list = memoVisible().filter(m => m.zone);
+  if (!list.length) return toast("Aucun indice avec une zone à réviser");
+  const m = list[(Math.random() * list.length) | 0];
+  $("memoReviewBox").innerHTML = `<div class="flash-card"><span class="mm-cat">${esc(m.cat)}</span><p style="margin-top:10px">${esc(m.text)}</p>
+    <div id="flashAns"><button class="btn sm" id="flashFlip">Retourner : quelle zone ?</button></div></div>`;
+  $("flashFlip").onclick = () => { $("flashAns").innerHTML = `<p class="flash-ans">${esc(m.zone)}</p><button class="btn ghost sm" id="flashNext">Carte suivante ↻</button>`; $("flashNext").onclick = () => $("memoReview").click(); };
+};
+onEnter.training = () => { refreshTraining(); renderGgDaily(); if (!quiz) renderQuizList(); if ($("trainTabs").querySelector(".on")?.dataset.ttab === "gg") setTimeout(drawChart, 40); };
 
 /* ---------- 12. ENQUÊTES ---------- */
 let cases = load("cases", null);
@@ -774,7 +1307,7 @@ const stars = n => "★".repeat(n) + "☆".repeat(5 - n);
 function saveCases() {
   activeCase = currentCase().id;
   save("cases", cases); save("activeCase", activeCase);
-  renderCaseSelect(); renderTimeline(); renderBoard(); refreshCaseMarkers();
+  renderCaseSelect(); renderTimeline(); renderBoard(); refreshCaseMarkers(); refreshTraining();
 }
 function addEntry(e) {
   currentCase().entries.push({ id: uid(), date: new Date().toISOString(), conf: 3, clue: "", hyp: "", proof: "", gps: "", ...e });
@@ -812,11 +1345,9 @@ function deleteEntry(id) {
   c.links = c.links.filter(([a, b]) => a !== id && b !== id);
   saveCases();
 }
-
-// Chronologie
 function renderTimeline() {
-  const list = currentCase().entries;
-  $("rCount").textContent = `${list.length} FICHE${list.length > 1 ? "S" : ""} · ${currentCase().links.length} FIL${currentCase().links.length > 1 ? "S" : ""}`;
+  const list = currentCase().entries, nl = currentCase().links.length;
+  $("rCount").textContent = `${list.length} FICHE${list.length > 1 ? "S" : ""} · ${nl} FIL${nl > 1 ? "S" : ""}`;
   $("rList").innerHTML = list.length ? list.map((e, i) => `
     <li><div class="meta"><span>FICHE ${pad(i + 1)}</span><span>${new Date(e.date).toLocaleString("fr-FR")}</span><span class="conf">${stars(e.conf || 3)}</span><button class="del" data-id="${e.id}" title="Supprimer">✕</button></div>
       ${e.clue ? `<div><b>Indice</b>${esc(e.clue)}</div>` : ""}${e.hyp ? `<div><b>Hypothèse</b>${esc(e.hyp)}</div>` : ""}
@@ -896,7 +1427,7 @@ $("linkMode").onclick = () => {
   linking = !linking; linkFrom = null;
   $("board").classList.toggle("linking", linking);
   $("linkMode").classList.toggle("on", linking);
-  $("boardHint").textContent = linking ? "MODE LIAISON — clique une fiche, puis une autre. Reclique le bouton pour terminer." : defaultHint;
+  $("boardHint").textContent = linking ? "MODE LIAISON — clique une fiche, puis une autre. Reclique le bouton (ou Échap) pour terminer." : defaultHint;
   $$(".pin-card.sel").forEach(x => x.classList.remove("sel"));
 };
 $("tidyBoard").onclick = () => { currentCase().entries.forEach((e, i) => [e.x, e.y] = gridPos(i)); saveCases(); };
@@ -909,7 +1440,6 @@ function setCaseMode(m) {
 }
 $$(".seg [data-mode]").forEach(b => b.onclick = () => setCaseMode(b.dataset.mode));
 
-// Exports
 $("exportMd").onclick = () => {
   const c = currentCase(), cell = s => String(s || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
   const num = Object.fromEntries(c.entries.map((e, i) => [e.id, i + 1]));
@@ -917,11 +1447,15 @@ $("exportMd").onclick = () => {
   c.entries.forEach((e, i) => md += `| ${i + 1} | ${new Date(e.date).toLocaleString("fr-FR")} | ${cell(e.clue)} | ${cell(e.hyp)} | ${cell(e.proof)} | ${cell(e.gps)} | ${e.conf || 3}/5 |\n`);
   if (c.links.length) md += `\n## Liens entre fiches\n\n${c.links.map(([a, b]) => `- Fiche ${num[a]} ↔ Fiche ${num[b]}`).join("\n")}\n`;
   download(`${c.name.replace(/[^\w-]+/g, "_")}.export.md`, md, "text/markdown");
+  if (!flags.exported) { flags.exported = true; save("flags", flags); refreshTraining(); }
 };
+const BACKUP_KEYS = ["cases", "activeCase", "tasks", "sessions", "ggMaps", "ggGoal", "totalSecs", "activity", "searchHistory", "settings",
+  "progress", "quizStats", "memo", "flags", "badges", "quizDaily", "ggDailyDone", "trainTab", "caseMode"];
 function exportAll() {
   save("totalSecs", totalSecs);
-  download(`osint-hub-sauvegarde-${todayKey()}.json`,
-    JSON.stringify({ app: "osint-hub", version: VERSION, cases, activeCase, tasks, sessions, ggMaps, totalSecs, activity, searchHistory: searchHist, settings }, null, 2), "application/json");
+  const data = { app: "osint-hub", version: VERSION };
+  BACKUP_KEYS.forEach(k => { const v = load(k, undefined); if (v !== undefined) data[k] = v; });
+  download(`osint-hub-sauvegarde-${todayKey()}.json`, JSON.stringify(data, null, 2), "application/json");
   toast("Sauvegarde téléchargée");
 }
 $("exportJson").onclick = exportAll;
@@ -930,13 +1464,12 @@ $("importJson").onchange = async e => {
     const d = JSON.parse(await e.target.files[0].text());
     if (!Array.isArray(d.cases)) throw 0;
     if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-    ["cases", "activeCase", "tasks", "sessions", "ggMaps", "totalSecs", "activity", "searchHistory", "settings"].forEach(k => d[k] !== undefined && save(k, d[k]));
+    BACKUP_KEYS.forEach(k => d[k] !== undefined && save(k, d[k]));
     location.reload();
   } catch { toast("Fichier de sauvegarde invalide"); }
   e.target.value = "";
 };
-onEnter.cases = () => { renderBoard(); };
-onEnter.home = () => { globe.resize(); globe.draw(); };
+onEnter.cases = () => renderBoard();
 
 /* ---------- 13. TABLEAU DE BORD ---------- */
 const tips = [
@@ -949,7 +1482,8 @@ const tips = [
   "Un pseudo est souvent réutilisé : WhatsMyName te dit où il existe.",
   "Disparition réelle : on appelle le 17 tout de suite, il n'y a aucun délai à attendre.",
   "Deux indices faibles concordants valent mieux qu'un indice fort isolé.",
-  "Monte le contraste ou inverse l'image : un panneau illisible peut redevenir lisible."
+  "Monte le contraste ou inverse l'image : un panneau illisible peut redevenir lisible.",
+  "Après chaque partie GeoGuessr, note dans le mémo l'indice qui t'a manqué."
 ];
 let tipIdx = Math.floor(Math.random() * tips.length);
 const showTip = () => $("tip").textContent = tips[tipIdx];
@@ -978,13 +1512,15 @@ onEnter.dashboard = () => {
   const h = new Date().getHours(), g = h < 6 ? "Bonne nuit" : h < 18 ? "Bonjour" : "Bonsoir";
   $("greet").dataset.txt = g; $("greet").textContent = g;
   $("dashDate").textContent = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
-  const mins = Math.floor(totalSecs / 60);
-  countUp($("sTime"), mins, v => v < 60 ? `${v} min` : `${Math.floor(v / 60)}h${pad(v % 60)}`);
+  const st = computeTraining();
+  countUp($("sTime"), Math.floor(totalSecs / 60), v => fmtMins(v * 60));
   countUp($("sStreak"), streak());
+  countUp($("sXp"), st.xp);
+  $("sRank").textContent = `XP · rang ${st.rank.name}`;
   countUp($("sSessions"), sessions.length);
-  $("sChallenges").textContent = `${tasks.filter(x => x.d).length}/${tasks.length}`;
   countUp($("sEntries"), cases.reduce((n, c) => n + c.entries.length, 0));
-  $("dashTasks").innerHTML = tasks.filter(x => !x.d).slice(0, 4).map(x => `<li><span class="mono muted">□</span><span class="t">${esc(x.t)}</span></li>`).join("") || `<li class="empty">Tout est terminé.</li>`;
+  const next = st.items.filter(it => !st.done(it.id)).slice(0, 4);
+  $("dashTasks").innerHTML = next.map(it => `<li><span class="lv-tag">NIV. ${it.lvl}</span><span class="t">${esc(it.t)}</span><span class="xp mono">+${it.xp}</span></li>`).join("") || `<li class="empty">Programme terminé. Bravo.</li>`;
   const all = cases.flatMap(c => c.entries.map(e => ({ ...e, c: c.name }))).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
   $("dashEntries").innerHTML = all.map(e => `<li><span class="t">${esc(trunc(e.clue || e.hyp || e.gps, 80))}</span><span class="mono small muted">${esc(e.c)}</span></li>`).join("") || `<li class="empty">Aucune fiche pour l'instant</li>`;
   renderHeat(); showTip();
@@ -1046,6 +1582,7 @@ document.addEventListener("click", e => {
 });
 onEnter.about = () => { if (pendingTab) { selectTab(pendingTab); pendingTab = null; } };
 $("setExport").onclick = exportAll;
+$("setCustom").onclick = () => openMenu(true);
 $("setCharter").onclick = () => { localStorage.removeItem(PREFIX + "terms"); showGate(); };
 $("setWipe").onclick = () => {
   if (!confirm("Effacer TOUTES les données d'OSINT Hub sur ce navigateur ?")) return;
@@ -1067,18 +1604,24 @@ $("gateGo").onclick = () => { save("terms", TERMS_VERSION); $("gate").hidden = t
 const commands = [
   ...KEYS.map((k, i) => [VIEWS[k], `touche ${i}`, () => go(k)]),
   ["À propos · Conditions · Paramètres", "", () => go("about")],
+  ["Ouvrir le menu", "", () => openMenu(false)],
+  ["Personnaliser le menu et la couleur", "", () => openMenu(true)],
   ["Démarrer / mettre en pause le chrono", "", toggleTimer],
   ["Changer de thème (papier / nuit)", "", () => $("themeBtn").click()],
   ["Activer / couper les effets animés", "", () => setSetting("fx", !settings.fx)],
+  ["Quiz du jour", "entraînement", () => startDailyQuiz()],
+  ...QUIZZES.map(q => [`Exercice : ${q.name}`, "entraînement", () => { go("training"); setTimeout(() => startQuiz(q.id), current === "training" ? 0 : 500); }]),
+  ["Défi GeoGuessr du jour", "entraînement", () => { go("training"); setTrainTab("gg"); }],
+  ["Enregistrer une session GeoGuessr", "entraînement", () => { go("training"); setTrainTab("gg"); setTimeout(() => $("ggScore").focus(), 700); }],
+  ["Ajouter un indice au mémo", "entraînement", () => { go("training"); setTrainTab("memo"); setTimeout(() => $("memoText").focus(), 700); }],
   ["Nouveau dossier d'enquête", "", () => { go("cases"); setTimeout(() => $("newCase").focus(), 700); }],
   ["Sauvegarder toutes les données (.json)", "", exportAll],
   ["Exporter le rapport du dossier (.md)", "", () => $("exportMd").click()],
-  ["Carte : soleil à l'heure actuelle", "", () => { go("map"); setTimeout(setSunNow, 700); }],
-  ["Carte : mesurer une distance", "", () => { go("map"); setTimeout(() => !measuring && $("measureBtn").click(), 700); }],
+  ["Carte : soleil à l'heure actuelle", "carte", () => { go("map"); setTimeout(setSunNow, 700); }],
+  ["Carte : mesurer une distance", "carte", () => { go("map"); setTimeout(() => !measuring && $("measureBtn").click(), 700); }],
   ...pointTools.map(t => [`Ouvrir ${t[0]} sur le point sélectionné`, "carte", () => point ? openUrl(t[1](...point)) : toast("Aucun point sélectionné sur la carte")])
 ];
 let sel = 0, filtered = commands;
-const norm = s => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const closePalette = () => $("palette").classList.remove("open");
 function openPalette() { closeMenu(); $("palette").classList.add("open"); $("paletteQ").value = ""; sel = 0; renderPalette(); setTimeout(() => $("paletteQ").focus(), 30); }
 function renderPalette() {
@@ -1112,15 +1655,25 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); $("palette").classList.contains("open") ? closePalette() : openPalette(); return; }
-  if (isTyping() || e.ctrlKey || e.altKey || e.metaKey || $("palette").classList.contains("open")) return;
+  if (e.ctrlKey || e.altKey || e.metaKey || $("palette").classList.contains("open")) return;
+  // Quiz en cours : 1-4 pour répondre, Entrée pour continuer
+  if (quiz && !quiz.done && current === "training" && !$("quizBox").hidden && !$("menu").classList.contains("open")) {
+    if (/^[0-9]$/.test(e.key) && !isTyping()) { e.preventDefault(); if (/^[1-4]$/.test(e.key) && !quiz.answered) answer(+e.key - 1); return; }
+    if (e.key === "Enter" && quiz.answered) { e.preventDefault(); nextQ(); return; }
+  }
+  if (isTyping()) return;
   if (/^[0-6]$/.test(e.key)) go(KEYS[+e.key]);
   else if (e.key === "Enter" && current === "home") go("dashboard");
 });
 
 /* ---------- 17. DÉMARRAGE ---------- */
 applySettings();
-renderCaseSelect(); renderTimeline(); renderHistory(); renderTools(); renderGgMaps(); renderSessions(); renderTasks();
+renderCaseSelect(); renderTimeline(); renderHistory(); renderTools();
+renderGgMaps(); renderSessions(); renderGgDaily(); renderTasks(); renderMemo(); renderQuizList();
+$("ggGoal").value = ggGoal;
 setCaseMode(caseMode);
+setTrainTab(load("trainTab", "program"));
+refreshTraining();
 $("rConfLbl").textContent = stars(3);
 setSunNow();
 loadLegal();

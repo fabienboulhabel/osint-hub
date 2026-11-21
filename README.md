@@ -16,6 +16,7 @@ Une application web installable (PWA), sans serveur ni compte : tout reste dans 
 ## Sommaire
 
 - [Modules](#modules)
+- [Entraînement](#entraînement)
 - [Démarrage rapide](#démarrage-rapide)
 - [Mise en ligne avec GitHub Pages](#mise-en-ligne-avec-github-pages)
 - [Installer comme application Windows](#installer-comme-application-windows)
@@ -34,13 +35,25 @@ Une application web installable (PWA), sans serveur ni compte : tout reste dans 
 | # | Module | Ce qu'il fait |
 |---|---|---|
 | 00 | **Accueil** | Globe interactif, présentation des modules, méthode, règles de terrain |
-| 01 | **Tableau de bord** | Statistiques, calendrier d'activité, série de jours, conseil du jour |
+| 01 | **Tableau de bord** | Statistiques, rang et XP, calendrier d'activité, prochaines étapes, conseil du jour |
 | 02 | **Recherche** | Détecte pseudo / nom / URL / image et prépare Dorks, WhatsMyName, recherche inversée, archives |
 | 03 | **Carte GEOINT** | Fonds IGN, satellite, OSM ; outils ouverts sur le point choisi ; soleil et ombres ; mesure de distance |
 | 04 | **Analyse photo** | Métadonnées EXIF et GPS, loupe, réglages contraste/luminosité/inversion, grille, observations |
-| 05 | **Entraînement** | Cartes GeoGuessr, courbe des scores, défis Gralhix et Bellingcat |
+| 05 | **Entraînement** | Programme en 5 niveaux, exercices intégrés, suivi GeoGuessr, mémo d'indices, badges |
 | 06 | **Enquêtes** | Chronologie et **tableau d'enquête** (fiches déplaçables reliées par des fils), exports |
-| — | **À propos** | Conditions, confidentialité, paramètres (thème, effets, effacement) |
+| — | **Menu** | Tuiles avec infos en direct, actions rapides, résumé du jour ; personnalisable |
+| — | **À propos** | Conditions, confidentialité, paramètres (thème, effets, sauvegarde, effacement) |
+
+## Entraînement
+
+| Onglet | Contenu |
+|---|---|
+| **Programme** | 23 étapes réparties en 5 niveaux (Fondations → Méthode d'enquêteur). Certaines se valident automatiquement (quiz réussi, nombre de parties GeoGuessr, dossier complet…). XP, 5 rangs et 12 badges |
+| **Exercices** | 4 quiz de 10 questions, jouables au clavier (touches 1 à 4) : Départements (numéro, nom, préfecture, option Auvergne-Rhône-Alpes), Indices France & Lyon, Outils & méthode, Ombres & heure (calculé avec SunCalc) |
+| **GeoGuessr** | Tes cartes, défi du jour (carte, mode, objectif, contrainte), journal des sessions avec mode, durée et notes, statistiques filtrables, courbe avec objectif |
+| **Mémo indices** | Fiches d'indices par catégorie et zone, recherche, mode révision façon flashcards |
+
+Le contenu pédagogique se trouve dans `data.js` : tu peux ajouter des questions, des étapes ou des indices sans toucher au reste du code.
 
 ## Démarrage rapide
 
@@ -50,7 +63,7 @@ Aucune installation : c'est du HTML, CSS et JavaScript.
 2. Ouvrir `index.html` dans Edge ou Chrome.
 
 > En local (`file://`), tout fonctionne sauf l'installation en application et le mode hors ligne, qui demandent une adresse **https**.
-> Une connexion Internet est nécessaire pour la carte, les polices et la lecture des métadonnées.
+> Une connexion Internet est nécessaire pour la carte, les polices, la lecture des métadonnées et l'exercice « Ombres & heure ».
 
 ### Avec Visual Studio
 
@@ -79,7 +92,8 @@ Aucune installation : c'est du HTML, CSS et JavaScript.
 | `0` à `6` | Aller au module correspondant |
 | `Ctrl` + `K` | Palette de commandes |
 | `Échap` | Fermer menu, palette ou fenêtre |
-| `Entrée` | Sur l'accueil : entrer dans le hub · En recherche : ouvrir l'outil mis en avant |
+| `Entrée` | Accueil : entrer · Recherche : ouvrir l'outil surligné · Quiz : question suivante |
+| `1` à `4` | Pendant un quiz : choisir une réponse |
 | Bouton retour de la souris | Page précédente |
 | `Ctrl` + `V` | Coller une image pour l'analyser |
 
@@ -90,6 +104,7 @@ osint-hub/
 ├── index.html                  Structure de toutes les pages
 ├── styles.css                  Mise en forme (thèmes papier et nuit)
 ├── app.js                      Logique de l'application
+├── data.js                     Contenu pédagogique (questions, programme, départements, indices)
 ├── legal.js                    Textes légaux intégrés (copie des fichiers .md)
 ├── sw.js                       Service worker (hors ligne)
 ├── manifest.json               Déclaration de l'application installable
@@ -107,9 +122,11 @@ osint-hub/
 
 | Quoi | Où |
 |---|---|
+| Ordre et affichage des modules, actions rapides, couleur d'accent | Dans l'application : **MENU › ✎ Personnaliser** |
+| Cartes GeoGuessr | Dans l'application : Entraînement › GeoGuessr (bouton ✎ ou « + Carte ») |
+| Questions, étapes du programme, indices de départ | `data.js` |
 | Lien vers ton dépôt (pied de page) | `app.js`, constante `REPO_URL` tout en haut |
-| Cartes GeoGuessr | Directement dans l'application (bouton ✎) |
-| Couleurs et polices | `styles.css`, variables au début du fichier |
+| Polices et couleurs de base | `styles.css`, variables au début du fichier |
 | Textes légaux | Les fichiers `.md`. En ligne, l'application les lit directement ; `legal.js` sert de secours en local |
 
 Si tu modifies les conditions de manière importante, augmente `TERMS_VERSION` dans `app.js` : l'accord sera redemandé.
@@ -117,14 +134,14 @@ Si tu modifies les conditions de manière importante, augmente `TERMS_VERSION` d
 ## Publier une mise à jour
 
 1. Modifier les fichiers.
-2. Dans `sw.js`, augmenter le numéro de `CACHE` (par exemple `osint-hub-v5` › `osint-hub-v6`).
+2. Dans `sw.js`, augmenter le numéro de `CACHE` (par exemple `osint-hub-v6` › `osint-hub-v7`).
 3. Commit puis push. Dans le navigateur : `Ctrl` + `F5`.
 
 ## Données et vie privée
 
 - Pas de compte, pas de cookie, pas de statistiques de visite.
 - Les données sont dans le `localStorage` du navigateur et les photos ne sont jamais envoyées.
-- Sauvegarde et restauration au format `.json` depuis le module Enquêtes.
+- Sauvegarde et restauration au format `.json` depuis le module Enquêtes ou les Paramètres.
 
 Détails : [Politique de confidentialité](CONFIDENTIALITE.md).
 
@@ -133,14 +150,14 @@ Détails : [Politique de confidentialité](CONFIDENTIALITE.md).
 | Service | Utilisation |
 |---|---|
 | [Leaflet](https://leafletjs.com) | Carte interactive |
-| [SunCalc](https://github.com/mourner/suncalc) | Position du soleil |
+| [SunCalc](https://github.com/mourner/suncalc) | Position du soleil (carte et exercice « Ombres & heure ») |
 | [exifr](https://github.com/MikeKovarik/exifr) | Lecture des métadonnées photo |
 | [IGN Géoplateforme](https://geoservices.ign.fr) | Plan IGN et photographies aériennes |
 | [OpenStreetMap](https://www.openstreetmap.org) / Nominatim | Fond de carte, recherche d'adresse |
 | Esri World Imagery | Imagerie satellite |
 | Google Fonts | Polices Archivo et JetBrains Mono |
 
-Ressources de formation citées : [Gralhix](https://gralhix.com) (Sofia Santos), [Bellingcat](https://www.bellingcat.com), [GeoGuessr](https://www.geoguessr.com), [ARPD](https://www.arpd.fr).
+Ressources de formation citées : [Gralhix](https://gralhix.com) (Sofia Santos), [Bellingcat](https://www.bellingcat.com), [GeoGuessr](https://www.geoguessr.com), [WorldGuessr](https://www.worldguessr.com), [ARPD](https://www.arpd.fr).
 Le projet n'est affilié à aucun de ces services ou organismes.
 
 ## Licence

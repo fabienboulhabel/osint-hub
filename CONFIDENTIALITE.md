@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**OSINT Hub** · Version 1.0 · Dernière mise à jour : 21 novembre 2026
+**OSINT Hub** · Version 1.1 · Dernière mise à jour : 21 novembre 2026
 
 ## En bref
 
@@ -15,14 +15,16 @@ L'outil utilise le stockage local du navigateur (`localStorage`). Ces données n
 
 | Donnée | Contenu |
 |---|---|
-| Enquêtes | Indices, hypothèses, preuves, coordonnées, positions sur le tableau |
-| Entraînement | Défis, sessions et scores GeoGuessr, liens de tes cartes |
+| Enquêtes | Indices, hypothèses, preuves, coordonnées, positions et fils du tableau |
+| Entraînement | Étapes du programme, résultats des exercices, badges, défis perso |
+| GeoGuessr | Liens de tes cartes, sessions (carte, mode, score, durée, notes), objectif |
+| Mémo | Indices de géolocalisation que tu as notés |
 | Activité | Temps d'entraînement, points d'activité par jour |
 | Recherche | Les 8 dernières recherches saisies |
 | Carte | Dernière position et dernier fond de carte affichés |
-| Réglages | Thème, effets visuels, acceptation des conditions |
+| Réglages | Thème, effets, couleur d'accent, ordre du menu, actions rapides, acceptation des conditions |
 
-Supprimer les données du site dans ton navigateur efface tout. Pense à faire une **sauvegarde .json** (module Enquêtes) si tu veux les conserver.
+Supprimer les données du site dans ton navigateur efface tout. Pense à faire une **sauvegarde .json** (module Enquêtes ou Paramètres) si tu veux les conserver.
 
 ## 2. Photos
 
@@ -40,7 +42,7 @@ Les images déposées dans le module Photo sont lues localement : affichage, ré
 
 ## 4. Services ouverts à ta demande
 
-Quand tu cliques sur un outil (Google, Yandex, Street View…), un nouvel onglet s'ouvre avec ta requête. Ce service reçoit alors ta recherche et applique sa propre politique de confidentialité.
+Quand tu cliques sur un outil (Google, Yandex, Street View, GeoGuessr…), un nouvel onglet s'ouvre. Ce service reçoit alors ta requête et applique sa propre politique de confidentialité.
 
 Bonne pratique (OPSEC) : utilise un navigateur dédié et des comptes neutres, jamais tes profils personnels.
 

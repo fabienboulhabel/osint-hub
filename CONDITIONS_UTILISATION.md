@@ -8,7 +8,7 @@
 
 OSINT Hub (« l'outil ») est une application web personnelle et gratuite destinée à l'entraînement aux techniques de recherche en sources ouvertes (OSINT) et de géolocalisation par l'image (GEOINT).
 
-Il regroupe des liens vers des services tiers, une carte, un lecteur de métadonnées photo et un carnet d'enquête. **Il ne contient et ne fournit aucune donnée sur des personnes.**
+Il regroupe des liens vers des services tiers, une carte, un lecteur de métadonnées photo, des exercices d'entraînement et un carnet d'enquête. **Il ne contient et ne fournit aucune donnée sur des personnes.**
 
 ## 2. Acceptation
 
@@ -16,7 +16,7 @@ L'utilisation de l'outil vaut acceptation des présentes conditions. Si tu ne le
 
 ## 3. Usages prévus
 
-- l'entraînement personnel : défis de géolocalisation, GeoGuessr, exercices publics ;
+- l'entraînement personnel : défis de géolocalisation, GeoGuessr, exercices intégrés, exercices publics ;
 - l'apprentissage d'une méthode rigoureuse : observer, formuler une hypothèse, prouver, documenter ;
 - l'aide bénévole à la recherche de personnes disparues, **uniquement** en lien avec la famille, une association reconnue ou les forces de l'ordre, et dans le respect de leurs consignes.
 
@@ -45,7 +45,7 @@ Il est interdit d'utiliser l'outil pour :
 
 L'outil ouvre ou interroge des services externes : moteurs de recherche, cartes, outils d'archivage, etc. Leur utilisation est soumise à leurs propres conditions, que l'utilisateur s'engage à respecter.
 
-L'outil n'est ni affilié, ni approuvé, ni soutenu par ces services, ni par les associations et organismes cités (notamment ARPD, Bellingcat, Gralhix, GeoGuessr, Google, IGN, OpenStreetMap).
+L'outil n'est ni affilié, ni approuvé, ni soutenu par ces services, ni par les associations et organismes cités (notamment ARPD, Bellingcat, Gralhix, GeoGuessr, WorldGuessr, Google, IGN, OpenStreetMap).
 
 ## 7. Données
 
@@ -53,7 +53,7 @@ Voir la [Politique de confidentialité](CONFIDENTIALITE.md). En résumé : tout 
 
 ## 8. Absence de garantie et responsabilité
 
-L'outil est fourni « en l'état », sans garantie d'exactitude, de disponibilité ou d'adéquation à un usage particulier. Les résultats (position du soleil, métadonnées, distances, géolocalisation) sont des aides : ils doivent toujours être vérifiés.
+L'outil est fourni « en l'état », sans garantie d'exactitude, de disponibilité ou d'adéquation à un usage particulier. Les résultats (position du soleil, métadonnées, distances, contenus pédagogiques, géolocalisation) sont des aides : ils doivent toujours être vérifiés.
 
 L'utilisateur est seul responsable de l'usage qu'il fait de l'outil et des informations obtenues. L'auteur ne pourra être tenu responsable d'un usage contraire aux présentes conditions.
 

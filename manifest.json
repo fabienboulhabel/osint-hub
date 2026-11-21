@@ -1,7 +1,7 @@
 {
   "name": "OSINT Hub — carnet de terrain",
   "short_name": "OSINT Hub",
-  "description": "Entraînement OSINT et GEOINT : recherche, carte, analyse photo, enquêtes.",
+  "description": "Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes.",
   "lang": "fr",
   "start_url": "./index.html",
   "scope": "./",

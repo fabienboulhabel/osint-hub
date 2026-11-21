@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="paper">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSINT Hub</title>
-  <meta name="theme-color" content="#07090f">
+  <title>OSINT Hub — carnet de terrain</title>
+  <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, enquêtes. Sources ouvertes uniquement.">
+  <meta name="theme-color" content="#0d0d0d">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
-  <!-- Bibliothèques externes : carte (Leaflet), soleil (SunCalc), métadonnées photo (exifr) -->
+  <!-- Polices -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Bibliothèques : carte (Leaflet), soleil (SunCalc), métadonnées (exifr) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
@@ -16,47 +21,56 @@
 </head>
 <body data-view="home">
 
+<!-- Décor : courbes de niveau animées + réticule -->
+<canvas id="topo" aria-hidden="true"></canvas>
+<div id="cross" aria-hidden="true"><i class="cx"></i><i class="cy"></i><span id="crossLbl"></span></div>
 <div id="progress"></div>
-<div id="halo"></div>
 
 <!-- =====================================================
-     BARRE DU HAUT (identique sur toutes les pages)
+     EN-TÊTE
      ===================================================== -->
 <header class="top">
-  <a class="logo" href="#home"><img src="icons/icon-192.png" alt=""><span>OSINT HUB</span></a>
-  <nav class="pills">
-    <a href="#dashboard" data-v="dashboard">Tableau de bord</a>
-    <a href="#search" data-v="search">Recherche</a>
-    <a href="#map" data-v="map">Carte</a>
-    <a href="#photo" data-v="photo">Photo</a>
-    <a href="#training" data-v="training">Entraînement</a>
-    <a href="#cases" data-v="cases">Enquêtes</a>
+  <a class="logo" href="#home" title="Accueil (0)"><span class="reticle"></span>OSINT<b>/</b>HUB</a>
+  <nav class="nav">
+    <a href="#dashboard" data-v="dashboard"><i>01</i><span data-scramble>Bord</span></a>
+    <a href="#search" data-v="search"><i>02</i><span data-scramble>Recherche</span></a>
+    <a href="#map" data-v="map"><i>03</i><span data-scramble>Carte</span></a>
+    <a href="#photo" data-v="photo"><i>04</i><span data-scramble>Photo</span></a>
+    <a href="#training" data-v="training"><i>05</i><span data-scramble>Entraînement</span></a>
+    <a href="#cases" data-v="cases"><i>06</i><span data-scramble>Enquêtes</span></a>
   </nav>
   <div class="top-r">
-    <div class="chip timer" title="Chronomètre d'entraînement">
-      <span id="timer">00:00:00</span>
+    <div class="tool timer" title="Chronomètre d'entraînement">
+      <span class="rec"></span><span id="timer">00:00:00</span>
       <button id="tToggle" title="Démarrer / pause">▶</button>
-      <button id="tReset" title="Remettre à zéro">⟲</button>
+      <button id="tReset" title="Remettre à zéro">↺</button>
     </div>
-    <label class="chip case-chip" title="Enquête active">📁 <select class="caseSelect"></select></label>
-    <button class="chip" id="kBtn" title="Palette de commandes (Ctrl+K)">Ctrl K</button>
-    <button class="menu-btn" id="menuBtn"><i></i>MENU</button>
+    <label class="tool case-tool" title="Enquête active"><small>DOSSIER</small><select class="caseSelect"></select></label>
+    <button class="tool sq" id="themeBtn" title="Thème papier / nuit">◐</button>
+    <button class="tool" id="kBtn" title="Palette de commandes">Ctrl K</button>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><span></span><span></span></button>
   </div>
 </header>
 
 <!-- Menu plein écran -->
 <div class="menu" id="menu">
-  <button class="menu-close" id="menuClose" title="Fermer (Échap)">✕</button>
-  <nav>
-    <a href="#home"><i>00</i>Accueil</a>
-    <a href="#dashboard"><i>01</i>Tableau de bord</a>
-    <a href="#search"><i>02</i>Recherche</a>
-    <a href="#map"><i>03</i>Carte GEOINT</a>
-    <a href="#photo"><i>04</i>Analyse photo</a>
-    <a href="#training"><i>05</i>Entraînement</a>
-    <a href="#cases"><i>06</i>Enquêtes</a>
-  </nav>
-  <p class="menu-hint">Raccourcis clavier : touches <kbd>0</kbd> à <kbd>6</kbd> · <kbd>Ctrl</kbd>+<kbd>K</kbd> · bouton retour de la souris</p>
+  <div class="menu-grid">
+    <nav>
+      <a href="#home" data-d="Globe, modules, méthode et règles de terrain."><i>00</i>Accueil</a>
+      <a href="#dashboard" data-d="Statistiques, calendrier d'activité, conseil du jour."><i>01</i>Tableau de bord</a>
+      <a href="#search" data-d="Pseudo, nom, URL ou image : tous les outils pré-remplis."><i>02</i>Recherche</a>
+      <a href="#map" data-d="IGN, satellite, soleil et ombres, mesure de distance."><i>03</i>Carte GEOINT</a>
+      <a href="#photo" data-d="EXIF, GPS, loupe, réglages d'image, grille d'observation."><i>04</i>Analyse photo</a>
+      <a href="#training" data-d="GeoGuessr, courbe des scores, défis et guides."><i>05</i>Entraînement</a>
+      <a href="#cases" data-d="Chronologie et tableau d'enquête à fils rouges."><i>06</i>Enquêtes</a>
+      <a href="#about" data-d="Conditions, confidentialité, paramètres."><i>—</i>À propos</a>
+    </nav>
+    <aside class="menu-aside">
+      <p class="mono" id="menuDesc">Choisis une destination.</p>
+      <p class="mono small">Touches <kbd>0</kbd>–<kbd>6</kbd> · <kbd>Ctrl</kbd>+<kbd>K</kbd> · <kbd>Échap</kbd></p>
+    </aside>
+  </div>
+  <button class="menu-close" id="menuClose" aria-label="Fermer">Fermer ✕</button>
 </div>
 
 <main>
@@ -65,113 +79,116 @@
      00 · ACCUEIL
      ===================================================== -->
 <section class="view" id="v-home">
-  <div class="h-hero">
-    <div class="radar"><div class="sweep"></div><span class="blip b1"></span><span class="blip b2"></span><span class="blip b3"></span></div>
-    <h1 class="h-title" id="hTitle">OSINT</h1>
-    <p class="h-sub reveal">Retrouver. Recouper. Prouver.<br><em>Sources ouvertes uniquement.</em></p>
-    <a class="btn big" href="#dashboard">Entrer dans le hub →</a>
-    <div class="h-scroll">Scroller pour découvrir<span></span></div>
+  <div class="hero">
+    <div class="hero-txt">
+      <p class="mono label">DOSSIER N° 001 — FORMATION OSINT / GEOINT</p>
+      <h1 class="giant"><span data-scramble>OSINT</span><br><span data-scramble>HUB</span><sup>®</sup></h1>
+      <p class="lead">Observer ce qui est visible.<br>Prouver ce qui est vrai.<br><mark>Sources ouvertes uniquement.</mark></p>
+      <div class="hero-cta">
+        <a class="btn" href="#dashboard">Entrer dans le hub <span>→</span></a>
+        <a class="btn ghost" href="#about">Lire la charte</a>
+      </div>
+    </div>
+    <figure class="globe-box">
+      <canvas id="globe"></canvas>
+      <figcaption class="mono">
+        <span>FIG. 00 — PROJECTION ORTHOGRAPHIQUE</span>
+        <span id="globeRead">CENTRE —</span>
+        <span class="muted">Glisser pour tourner · double-clic pour ouvrir la carte</span>
+      </figcaption>
+    </figure>
+    <div class="hero-foot mono"><span>↓ Faire défiler</span><span id="clock">--:--:--</span><span>LYON · 45.7640 N · 4.8357 E</span></div>
   </div>
 
-  <div class="marquee"><div class="track" id="marquee"></div></div>
+  <div class="ticker mono"><div class="ticker-track" id="ticker"></div></div>
 
-  <div class="h-modules">
-    <div class="h-sticky">
-      <div class="orb"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="orb-icon" id="orbIcon">🔎</div></div>
-      <div class="h-counter"><span id="hNum">01</span> / 05</div>
+  <section class="block">
+    <header class="block-head"><span class="mono">§ 1</span><h2 data-scramble>Index des modules</h2><p>Six outils, une seule fenêtre. Survole une fiche, clique pour l'ouvrir.</p></header>
+    <div class="dossiers">
+      <a class="dossier" href="#dashboard"><span class="tab mono">01 — BORD</span><div class="d-body"><h3>Tableau de bord</h3><p>Ton activité, ta série de jours, tes chiffres, le réflexe du jour.</p><span class="d-foot mono">TOUCHE 1 <b>→</b></span></div></a>
+      <a class="dossier" href="#search"><span class="tab mono">02 — RECHERCHE</span><div class="d-body"><h3>Recherche</h3><p>Un pseudo, un nom, une URL, une image : les bons outils, déjà remplis.</p><span class="d-foot mono">TOUCHE 2 <b>→</b></span></div></a>
+      <a class="dossier" href="#map"><span class="tab mono">03 — CARTE</span><div class="d-body"><h3>Carte GEOINT</h3><p>IGN, satellite, ombres portées, mesure. Un clic, neuf outils au même endroit.</p><span class="d-foot mono">TOUCHE 3 <b>→</b></span></div></a>
+      <a class="dossier" href="#photo"><span class="tab mono">04 — PHOTO</span><div class="d-body"><h3>Analyse photo</h3><p>Métadonnées, loupe, contraste, grille. L'image ne quitte jamais ton PC.</p><span class="d-foot mono">TOUCHE 4 <b>→</b></span></div></a>
+      <a class="dossier" href="#training"><span class="tab mono">05 — TERRAIN</span><div class="d-body"><h3>Entraînement</h3><p>GeoGuessr, scores, défis Gralhix, guides Bellingcat.</p><span class="d-foot mono">TOUCHE 5 <b>→</b></span></div></a>
+      <a class="dossier" href="#cases"><span class="tab mono">06 — ENQUÊTES</span><div class="d-body"><h3>Enquêtes</h3><p>Des fiches, des punaises, des fils rouges. Et un rapport propre à la fin.</p><span class="d-foot mono">TOUCHE 6 <b>→</b></span></div></a>
     </div>
-    <div class="h-panels">
-      <article class="h-panel" data-color="#38bdf8" data-icon="🔎" data-num="01">
-        <small>Module 01</small><h2>Recherche</h2>
-        <p>Un pseudo, un nom, une URL ou une image. L'outil reconnaît ce que tu tapes et prépare toutes les recherches : Dorks, WhatsMyName, recherche inversée, archives.</p>
-        <a class="btn" href="#search">Ouvrir →</a>
-      </article>
-      <article class="h-panel" data-color="#34d399" data-icon="🗺️" data-num="02">
-        <small>Module 02</small><h2>Carte GEOINT</h2>
-        <p>Plan et photo aérienne IGN, satellite, OpenStreetMap. Clique un point : Street View, Géoportail, Overpass ou Cartoradio s'ouvrent au bon endroit. Soleil et ombres tracés en direct.</p>
-        <a class="btn" href="#map">Ouvrir →</a>
-      </article>
-      <article class="h-panel" data-color="#fbbf24" data-icon="📷" data-num="03">
-        <small>Module 03</small><h2>Analyse photo</h2>
-        <p>Glisse une image : métadonnées, GPS éventuel, loupe, grille d'observation. La photo ne quitte jamais ton PC.</p>
-        <a class="btn" href="#photo">Ouvrir →</a>
-      </article>
-      <article class="h-panel" data-color="#f472b6" data-icon="🎯" data-num="04">
-        <small>Module 04</small><h2>Entraînement</h2>
-        <p>Tes cartes GeoGuessr, ta courbe de progression, les défis Gralhix et les guides Bellingcat, avec chronomètre intégré.</p>
-        <a class="btn" href="#training">Ouvrir →</a>
-      </article>
-      <article class="h-panel" data-color="#a78bfa" data-icon="📁" data-num="05">
-        <small>Module 05</small><h2>Enquêtes</h2>
-        <p>Indice, hypothèse, preuve, coordonnées. Une chronologie par exercice, des points sur la carte et un export propre.</p>
-        <a class="btn" href="#cases">Ouvrir →</a>
-      </article>
-    </div>
-  </div>
+  </section>
 
-  <div class="h-method" id="hMethod">
-    <h2 class="reveal">La méthode</h2>
+  <section class="block method" id="method">
+    <header class="block-head"><span class="mono">§ 2</span><h2 data-scramble>La méthode</h2><p>Quatre temps, toujours dans cet ordre.</p></header>
     <div class="steps">
-      <div class="line"><div id="lineFill"></div></div>
-      <div class="step reveal"><b>1</b><h3>Indice</h3><p>Ce que tu observes, rien de plus.</p></div>
-      <div class="step reveal"><b>2</b><h3>Hypothèse</h3><p>Ce que tu en déduis.</p></div>
-      <div class="step reveal"><b>3</b><h3>Preuve</h3><p>Une source archivée et horodatée.</p></div>
-      <div class="step reveal"><b>4</b><h3>Coordonnées</h3><p>Le point vérifié sur la carte.</p></div>
+      <svg class="steps-line" preserveAspectRatio="none" viewBox="0 0 1000 10"><path id="stepsPath" d="M0 5 H1000"/></svg>
+      <div class="step reveal"><b>A</b><h3>Indice</h3><p>Ce que tu observes. Rien de plus.</p></div>
+      <div class="step reveal"><b>B</b><h3>Hypothèse</h3><p>Ce que tu en déduis, avec un niveau de confiance.</p></div>
+      <div class="step reveal"><b>C</b><h3>Preuve</h3><p>Une source archivée et horodatée.</p></div>
+      <div class="step reveal"><b>D</b><h3>Coordonnées</h3><p>Le point vérifié, sur la carte.</p></div>
     </div>
-  </div>
+  </section>
 
-  <div class="h-faq">
-    <h2 class="reveal">Questions fréquentes</h2>
-    <details class="reveal"><summary>Quel est le cadre légal ?</summary><p>Sources ouvertes uniquement : aucun piratage, aucun bornage téléphonique, aucune usurpation d'identité. Les recherches réelles se font en lien avec les familles, les associations et les enquêteurs.</p></details>
-    <details class="reveal"><summary>Quelqu'un vient de disparaître : que faire ?</summary><p>Appeler immédiatement le 17. Il n'existe aucun délai légal de 24 ou 48 heures à attendre.</p></details>
-    <details class="reveal"><summary>Comment protéger mon identité (OPSEC) ?</summary><p>Navigateur dédié, comptes neutres, jamais tes profils personnels, et archivage systématique des preuves (captures horodatées, Wayback Machine).</p></details>
-    <details class="reveal"><summary>Où sont stockées mes données ?</summary><p>Uniquement dans ce navigateur, sur ton PC. Les photos analysées ne sont jamais envoyées. Fais une sauvegarde .json de temps en temps depuis le module Enquêtes.</p></details>
-  </div>
+  <section class="block rules">
+    <header class="block-head"><span class="mono">§ 3</span><h2 data-scramble>Règles de terrain</h2><p>Non négociables.</p></header>
+    <ol class="rules-list">
+      <li class="reveal"><b>01</b><div><h3>Sources ouvertes, rien d'autre</h3><p>Aucun piratage, aucun bornage, aucune usurpation d'identité, aucun faux profil pour tromper quelqu'un.</p></div></li>
+      <li class="reveal"><b>02</b><div><h3>Disparition : le 17 d'abord</h3><p>Il n'existe aucun délai légal. Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</p></div></li>
+      <li class="reveal"><b>03</b><div><h3>Jamais d'exposition</h3><p>On ne publie ni adresse, ni hypothèse, ni lieu supposé. Un adulte a le droit de partir.</p></div></li>
+      <li class="reveal"><b>04</b><div><h3>Hygiène numérique</h3><p>Navigateur dédié, comptes neutres, archivage des preuves, suppression des données après l'exercice.</p></div></li>
+    </ol>
+  </section>
 
-  <div class="h-cta">
-    <h2 class="h-big reveal">Prêt ?</h2>
-    <a class="btn big" href="#dashboard">Entrer dans le hub →</a>
-    <p class="muted">Raccourci : touche <kbd>Entrée</kbd></p>
-  </div>
+  <section class="block faq">
+    <header class="block-head"><span class="mono">§ 4</span><h2 data-scramble>Questions fréquentes</h2></header>
+    <details class="reveal"><summary>Que fait exactement cet outil ?</summary><p>Il prépare des recherches dans des services publics, affiche des cartes, lit les métadonnées d'une photo et t'aide à documenter une démarche. Il ne contient aucune donnée sur des personnes.</p></details>
+    <details class="reveal"><summary>Où sont stockées mes données ?</summary><p>Uniquement dans ce navigateur, sur ton ordinateur. Pas de compte, pas de cookie, pas de serveur. Les photos ne sont jamais envoyées.</p></details>
+    <details class="reveal"><summary>Puis-je aider à une recherche réelle ?</summary><p>Oui, mais uniquement dans le cadre fixé par la famille, une association comme l'ARPD ou les forces de l'ordre, en suivant leurs consignes.</p></details>
+    <details class="reveal"><summary>Comment l'installer comme une application ?</summary><p>Depuis l'adresse en ligne, dans Edge : menu … › Applications › Installer ce site en tant qu'application.</p></details>
+  </section>
+
+  <section class="final">
+    <h2 class="giant sm" data-scramble>PRÊT ?</h2>
+    <a class="btn big" href="#dashboard">Entrer dans le hub <span>→</span></a>
+    <p class="mono small muted">ou appuie sur <kbd>Entrée</kbd></p>
+  </section>
 </section>
 
 <!-- =====================================================
      01 · TABLEAU DE BORD
      ===================================================== -->
 <section class="view" id="v-dashboard">
-  <div class="m-hero"><span class="num">01</span><h1 id="greet">Bonjour</h1><p>Ton poste d'entraînement OSINT &amp; GEOINT.</p></div>
+  <header class="m-head">
+    <div class="m-meta mono"><span>FIG. 01</span><span>TABLEAU DE BORD</span><span id="dashDate"></span></div>
+    <h1 class="giant md" id="greet" data-scramble>Bonjour</h1>
+    <p class="lead">Ton poste d'entraînement OSINT &amp; GEOINT.</p>
+  </header>
   <div class="wrap">
     <div class="stats">
-      <div class="stat"><b data-count="sTime" id="sTime">0</b><span>d'entraînement</span></div>
-      <div class="stat"><b id="sSessions">0</b><span>sessions GeoGuessr</span></div>
-      <div class="stat"><b id="sChallenges">0 / 0</b><span>défis terminés</span></div>
-      <div class="stat"><b id="sEntries">0</b><span>indices consignés</span></div>
+      <div class="stat"><small class="mono">TEMPS</small><b id="sTime">0</b><span>d'entraînement cumulé</span></div>
+      <div class="stat"><small class="mono">SÉRIE</small><b id="sStreak">0</b><span>jours consécutifs</span></div>
+      <div class="stat"><small class="mono">GEOGUESSR</small><b id="sSessions">0</b><span>sessions enregistrées</span></div>
+      <div class="stat"><small class="mono">DÉFIS</small><b id="sChallenges">0/0</b><span>terminés</span></div>
+      <div class="stat"><small class="mono">INDICES</small><b id="sEntries">0</b><span>consignés</span></div>
     </div>
 
-    <h2 class="sec">Accès rapide</h2>
-    <div class="tiles">
-      <a class="tile" href="#search" style="--t:#38bdf8"><span>🔎</span><b>Rechercher</b><small>Pseudo, nom, image, URL</small></a>
-      <a class="tile" href="#map" style="--t:#34d399"><span>🗺️</span><b>Carte</b><small>IGN, satellite, soleil</small></a>
-      <a class="tile" href="#photo" style="--t:#fbbf24"><span>📷</span><b>Photo</b><small>EXIF, loupe, indices</small></a>
-      <a class="tile" href="#training" style="--t:#f472b6"><span>🎯</span><b>S'entraîner</b><small>GeoGuessr, défis</small></a>
-      <a class="tile" href="#cases" style="--t:#a78bfa"><span>📁</span><b>Enquêtes</b><small>Chronologie, export</small></a>
-    </div>
-
-    <div class="cols">
-      <div class="card"><h3>Défis en cours</h3><ul id="dashTasks" class="list"></ul><a class="link" href="#training">Tout voir →</a></div>
-      <div class="card"><h3>Dernières entrées</h3><ul id="dashEntries" class="list"></ul><a class="link" href="#cases">Tout voir →</a></div>
+    <div class="card">
+      <div class="card-head"><h3>Calendrier d'activité</h3><span class="mono small muted">16 DERNIÈRES SEMAINES</span></div>
+      <div class="heat-wrap"><div class="heat-days mono"><span>L</span><span></span><span>M</span><span></span><span>V</span><span></span><span>D</span></div><div id="heat" class="heat"></div></div>
+      <div class="heat-legend mono small muted">Moins <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Plus · <span id="heatInfo"></span></div>
     </div>
 
     <div class="cols">
-      <div class="card tip"><h3>💡 Réflexe du jour</h3><p id="tip"></p><button class="btn ghost sm" id="nextTip">Un autre</button></div>
-      <div class="card"><h3>Ressources</h3>
+      <div class="card"><div class="card-head"><h3>Défis en cours</h3><a class="link mono small" href="#training">TOUT VOIR →</a></div><ul id="dashTasks" class="list"></ul></div>
+      <div class="card"><div class="card-head"><h3>Dernières entrées</h3><a class="link mono small" href="#cases">TOUT VOIR →</a></div><ul id="dashEntries" class="list"></ul></div>
+    </div>
+
+    <div class="cols">
+      <div class="card note"><div class="card-head"><h3>Réflexe du jour</h3><button class="btn ghost sm" id="nextTip">Suivant ↻</button></div><p id="tip" class="tip"></p></div>
+      <div class="card"><div class="card-head"><h3>Ressources</h3></div>
         <div class="links">
-          <a href="https://www.arpd.fr/" target="_blank" rel="noopener">ARPD — avis de recherche</a>
-          <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix — défis Sofia Santos</a>
-          <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Bellingcat — guides</a>
-          <a href="https://web.archive.org/" target="_blank" rel="noopener">Wayback Machine</a>
+          <a href="https://www.arpd.fr/" target="_blank" rel="noopener">ARPD — avis de recherche ↗</a>
+          <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix — défis ↗</a>
+          <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Bellingcat — guides ↗</a>
+          <a href="https://web.archive.org/" target="_blank" rel="noopener">Wayback Machine ↗</a>
         </div>
-        <p class="muted small">Disparition réelle : appeler le <b>17</b> immédiatement.</p>
+        <p class="alert mono small">DISPARITION RÉELLE → APPELER LE 17, SANS ATTENDRE.</p>
       </div>
     </div>
   </div>
@@ -181,15 +198,20 @@
      02 · RECHERCHE
      ===================================================== -->
 <section class="view" id="v-search">
-  <div class="m-hero"><span class="num">02</span><h1>Recherche</h1><p>Tape un pseudo, un nom, une URL de page ou une URL d'image. <kbd>Entrée</kbd> ouvre le premier outil.</p></div>
+  <header class="m-head">
+    <div class="m-meta mono"><span>FIG. 02</span><span>RECHERCHE</span><span>SOURCES OUVERTES</span></div>
+    <h1 class="giant md" data-scramble>Recherche</h1>
+    <p class="lead">Tape un pseudo, un nom, une URL de page ou d'image. <kbd>Entrée</kbd> ouvre l'outil surligné.</p>
+  </header>
   <div class="wrap">
-    <div class="bigsearch">
-      <input id="q" placeholder="ex : jean_dupont69 · Jean Dupont · https://…" autocomplete="off" spellcheck="false">
-      <span id="qType" class="badge">—</span>
+    <div class="prompt">
+      <span class="mono caret">&gt;</span>
+      <input id="q" placeholder="jean_dupont69 · Jean Dupont · https://…" autocomplete="off" spellcheck="false">
+      <span id="qType" class="badge mono off">EN ATTENTE</span>
     </div>
     <div class="history" id="history"></div>
     <div class="filters">
-      <span class="muted">Cibler :</span>
+      <span class="mono small muted">CIBLER :</span>
       <label class="toggle"><input type="checkbox" class="dork" value="site:facebook.com"><span>Facebook</span></label>
       <label class="toggle"><input type="checkbox" class="dork" value="site:instagram.com"><span>Instagram</span></label>
       <label class="toggle"><input type="checkbox" class="dork" value="site:tiktok.com"><span>TikTok</span></label>
@@ -197,9 +219,9 @@
       <label class="toggle"><input type="checkbox" class="dork" value="site:linkedin.com"><span>LinkedIn</span></label>
       <label class="toggle"><input type="checkbox" class="dork" value="site:leboncoin.fr"><span>Leboncoin</span></label>
       <label class="toggle"><input type="checkbox" class="dork" value="site:blablacar.fr"><span>BlaBlaCar</span></label>
-      <label class="toggle"><input type="checkbox" id="dorkExact" checked><span>"Expression exacte"</span></label>
+      <label class="toggle"><input type="checkbox" id="dorkExact" checked><span>"Exact"</span></label>
     </div>
-    <p class="muted small">Requête générée : <code id="dorkPreview">—</code> <button class="btn ghost sm" id="copyDork">Copier</button></p>
+    <p class="mono small dork-line"><span class="muted">REQUÊTE :</span> <code id="dorkPreview">—</code> <button class="btn ghost sm" id="copyDork">Copier</button></p>
     <div id="toolGroups"></div>
   </div>
 </section>
@@ -210,22 +232,29 @@
 <section class="view" id="v-map">
   <div class="map-wrap">
     <div id="leaflet"></div>
-    <div class="map-search glass">
-      <input id="geoQ" placeholder="🔍 Adresse, lieu ou « 45.76, 4.83 »" autocomplete="off">
+    <div class="map-reticle" aria-hidden="true"></div>
+    <div class="map-search panel">
+      <input id="geoQ" placeholder="Adresse, lieu ou « 45.76, 4.83 »" autocomplete="off">
       <div id="geoResults"></div>
     </div>
-    <aside class="map-panel glass">
-      <span class="num sm">03</span><h2>Carte GEOINT</h2>
-      <p class="muted small" id="mapHint">Clique sur la carte pour placer un point.</p>
-      <div class="coords"><code id="coords">—</code><button class="btn ghost sm" id="copyCoords" title="Copier">📋</button></div>
-      <h3>☀️ Soleil &amp; ombres</h3>
-      <input type="datetime-local" id="sunDate">
-      <div class="row"><button class="btn ghost sm" id="sunNow">Maintenant</button></div>
-      <div id="sunInfo" class="muted small">—</div>
-      <h3>Ouvrir ce point dans…</h3>
-      <div id="pointTools" class="links"></div>
-      <h3>Consigner</h3>
-      <button class="btn wide" id="pinToCase">📌 Ajouter à l'enquête active</button>
+    <aside class="map-panel panel">
+      <div class="m-meta mono"><span>FIG. 03</span><span>CARTE GEOINT</span></div>
+      <h2 data-scramble>Point</h2>
+      <p class="mono small muted" id="mapHint">Clique sur la carte pour placer un point.</p>
+      <div class="coords"><code id="coords">—</code><button class="btn ghost sm" id="copyCoords" title="Copier">Copier</button></div>
+
+      <h3 class="mono">☀ SOLEIL &amp; OMBRES</h3>
+      <div class="row"><input type="datetime-local" id="sunDate"><button class="btn ghost sm" id="sunNow">Maint.</button></div>
+      <div id="sunInfo" class="small">—</div>
+
+      <h3 class="mono">↗ OUVRIR CE POINT DANS</h3>
+      <div id="pointTools" class="links"><span class="muted small">Place d'abord un point.</span></div>
+
+      <h3 class="mono">⟷ MESURE</h3>
+      <div class="row"><button class="btn ghost sm" id="measureBtn">Mesurer une distance</button><span id="measureOut" class="mono small"></span></div>
+
+      <h3 class="mono">📌 CONSIGNER</h3>
+      <button class="btn wide" id="pinToCase">Ajouter le point à l'enquête</button>
     </aside>
   </div>
 </section>
@@ -234,39 +263,61 @@
      04 · PHOTO
      ===================================================== -->
 <section class="view" id="v-photo">
-  <div class="m-hero"><span class="num">04</span><h1>Analyse photo</h1><p>La photo reste sur ton PC : rien n'est envoyé sur Internet.</p></div>
+  <header class="m-head">
+    <div class="m-meta mono"><span>FIG. 04</span><span>ANALYSE PHOTO</span><span>TRAITEMENT 100 % LOCAL</span></div>
+    <h1 class="giant md" data-scramble>Photo</h1>
+    <p class="lead">L'image reste sur ton PC. Glisse-la n'importe où sur la page, ou colle-la avec <kbd>Ctrl</kbd>+<kbd>V</kbd>.</p>
+  </header>
   <div class="wrap">
-    <div id="drop" class="drop">
-      <span class="drop-ico">⬇</span>
-      <b>Glisse une image ici</b>
-      <span class="muted">ou <label class="link">parcours<input type="file" id="file" accept="image/*" hidden></label> · Ctrl+V fonctionne aussi</span>
-    </div>
+    <label id="drop" class="drop">
+      <input type="file" id="file" accept="image/*" hidden>
+      <span class="drop-ico mono">[ + ]</span>
+      <b>Déposer une image</b>
+      <span class="mono small muted">ou cliquer pour parcourir</span>
+    </label>
     <div class="photo-grid">
       <div>
-        <div class="photo-view" id="photoView"><img id="preview" alt=""><span class="muted" id="noImg">Aucune image</span></div>
-        <p class="muted small">Clique sur l'image pour activer la loupe, déplace la souris pour explorer.</p>
+        <div class="photo-view" id="photoView">
+          <div class="img-wrap" id="imgWrap"><img id="preview" alt=""><div class="grid-ov" id="gridOv"></div></div>
+          <span class="mono muted" id="noImg">AUCUNE IMAGE</span>
+        </div>
+        <p class="mono small muted">Clic sur l'image = loupe ×2,6 · déplace la souris pour explorer.</p>
         <div class="card">
-          <h3>Recherche inversée</h3>
-          <p class="muted small">1. Copie l'image · 2. ouvre un outil · 3. colle-la (Ctrl+V).</p>
+          <div class="card-head"><h3>Réglages de lecture</h3><button class="btn ghost sm" id="fxReset">Réinitialiser</button></div>
+          <div class="sliders">
+            <label>Contraste <input type="range" id="fxC" min="50" max="300" value="100"><output>100</output></label>
+            <label>Luminosité <input type="range" id="fxB" min="30" max="250" value="100"><output>100</output></label>
+            <label>Saturation <input type="range" id="fxS" min="0" max="300" value="100"><output>100</output></label>
+          </div>
+          <div class="row wrap-row">
+            <label class="toggle"><input type="checkbox" id="fxI"><span>Inverser</span></label>
+            <label class="toggle"><input type="checkbox" id="fxG"><span>Niveaux de gris</span></label>
+            <label class="toggle"><input type="checkbox" id="gridT"><span>Grille 3×3</span></label>
+            <label class="toggle"><input type="checkbox" id="gridF"><span>Grille fine</span></label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Recherche inversée</h3></div>
+          <p class="small muted">1. Copie l'image · 2. ouvre un outil · 3. colle-la (Ctrl+V).</p>
           <div class="links">
-            <button id="copyImg">📋 Copier l'image</button>
-            <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens</a>
-            <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex</a>
-            <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a>
-            <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing Visual</a>
+            <button id="copyImg">Copier l'image</button>
+            <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens ↗</a>
+            <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex ↗</a>
+            <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye ↗</a>
+            <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing Visual ↗</a>
           </div>
         </div>
       </div>
       <div>
         <div class="card">
-          <h3>Métadonnées (EXIF)</h3>
+          <div class="card-head"><h3>Métadonnées (EXIF)</h3></div>
           <table id="exif" class="kv"><tr><td class="muted">Aucune image chargée</td></tr></table>
-          <button class="btn wide" id="exifToMap" hidden>🗺️ Voir la position GPS sur la carte</button>
+          <button class="btn wide" id="exifToMap" hidden>Voir la position GPS sur la carte →</button>
         </div>
         <div class="card">
-          <h3>Grille d'observation</h3>
+          <div class="card-head"><h3>Grille d'observation</h3></div>
           <div id="clueGrid"></div>
-          <button class="btn wide" id="cluesToCase">📌 Envoyer les observations à l'enquête</button>
+          <button class="btn wide" id="cluesToCase">Envoyer les observations à l'enquête</button>
         </div>
       </div>
     </div>
@@ -277,32 +328,35 @@
      05 · ENTRAÎNEMENT
      ===================================================== -->
 <section class="view" id="v-training">
-  <div class="m-hero"><span class="num">05</span><h1>Entraînement</h1><p>Géolocalisation, méthodologie, régularité.</p></div>
+  <header class="m-head">
+    <div class="m-meta mono"><span>FIG. 05</span><span>ENTRAÎNEMENT</span><span>RÉGULARITÉ &gt; INTENSITÉ</span></div>
+    <h1 class="giant md" data-scramble>Terrain</h1>
+    <p class="lead">Géolocalisation, méthodologie, régularité.</p>
+  </header>
   <div class="wrap">
     <div class="cols">
       <div class="card">
-        <h3>GeoGuessr</h3>
+        <div class="card-head"><h3>GeoGuessr</h3><button class="btn ghost sm" id="ggAddMap">+ Carte</button></div>
         <div id="ggLinks" class="gg-links"></div>
-        <button class="btn ghost sm" id="ggAddMap">+ Ajouter une carte</button>
-        <h3>Nouvelle session</h3>
+        <h4 class="mono small">NOUVELLE SESSION</h4>
         <div class="row">
           <select id="ggMap"></select>
           <input id="ggScore" type="number" min="0" placeholder="Score">
           <button class="btn" id="ggAdd">Ajouter</button>
         </div>
-        <div class="chart-box"><canvas id="ggChart"></canvas><span id="ggAvg" class="muted small"></span></div>
+        <div class="chart-box"><canvas id="ggChart"></canvas><span id="ggAvg" class="mono small muted"></span></div>
         <ul id="ggList" class="list small"></ul>
       </div>
       <div class="card">
-        <h3>Défis &amp; guides <span id="taskPct" class="muted small"></span></h3>
+        <div class="card-head"><h3>Défis &amp; guides</h3><span id="taskPct" class="mono small"></span></div>
         <div class="progress"><div id="taskBar"></div></div>
         <div class="row"><input id="taskInput" placeholder="Nouveau défi…"><button class="btn" id="taskAdd">Ajouter</button></div>
         <ul id="taskList" class="list"></ul>
-        <h3>Ressources</h3>
+        <h4 class="mono small">RESSOURCES</h4>
         <div class="links">
-          <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix (Sofia Santos)</a>
-          <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Guides Bellingcat</a>
-          <a href="https://www.geoguessr.com" target="_blank" rel="noopener">GeoGuessr</a>
+          <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix (Sofia Santos) ↗</a>
+          <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Guides Bellingcat ↗</a>
+          <a href="https://www.geoguessr.com" target="_blank" rel="noopener">GeoGuessr ↗</a>
         </div>
       </div>
     </div>
@@ -313,52 +367,157 @@
      06 · ENQUÊTES
      ===================================================== -->
 <section class="view" id="v-cases">
-  <div class="m-hero"><span class="num">06</span><h1>Enquêtes</h1><p>Indice → Hypothèse → Preuve → Coordonnées.</p></div>
+  <header class="m-head">
+    <div class="m-meta mono"><span>FIG. 06</span><span>ENQUÊTES</span><span id="caseMeta"></span></div>
+    <h1 class="giant md" data-scramble>Enquêtes</h1>
+    <p class="lead">Indice → Hypothèse → Preuve → Coordonnées.</p>
+  </header>
   <div class="wrap">
     <div class="case-bar card">
-      <label class="case-pick">Enquête active <select class="caseSelect"></select></label>
+      <label class="case-pick mono">DOSSIER ACTIF <select class="caseSelect"></select></label>
       <div class="row">
-        <input id="newCase" placeholder="Nom d'un nouvel exercice">
+        <input id="newCase" placeholder="Nom d'un nouveau dossier">
         <button class="btn" id="addCase">Créer</button>
         <button class="btn ghost" id="renameCase">Renommer</button>
         <button class="btn danger" id="delCase">Supprimer</button>
       </div>
     </div>
-    <div class="cols">
+
+    <div class="cols cols-cases">
       <div class="card">
-        <h3>Nouvel élément</h3>
+        <div class="card-head"><h3>Nouvelle fiche</h3></div>
         <label class="fl">Indice observé<textarea id="rClue"></textarea></label>
         <label class="fl">Hypothèse<textarea id="rHyp"></textarea></label>
         <label class="fl">Preuve (source, lien archivé, capture)<textarea id="rProof"></textarea></label>
         <label class="fl">Coordonnées GPS<input id="rGps" placeholder="45.7640, 4.8357"></label>
-        <label class="fl">Confiance <span id="rConfLbl" class="stars">★★★☆☆</span><input id="rConf" type="range" min="1" max="5" value="3"></label>
-        <button class="btn wide" id="rAdd">Ajouter à la chronologie</button>
+        <label class="fl">Confiance <span id="rConfLbl" class="conf"></span><input id="rConf" type="range" min="1" max="5" value="3"></label>
+        <button class="btn wide" id="rAdd">Ajouter la fiche</button>
       </div>
+
       <div class="card">
-        <h3>Chronologie <span id="rCount" class="muted small"></span></h3>
-        <div class="row wrap-row">
-          <button class="btn ghost sm" id="exportMd">⬇ Rapport .md</button>
-          <button class="btn ghost sm" id="exportJson">💾 Sauvegarde .json</button>
-          <label class="btn ghost sm">📂 Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
+        <div class="card-head">
+          <div class="seg mono" role="tablist">
+            <button class="on" data-mode="board">TABLEAU</button>
+            <button data-mode="timeline">CHRONOLOGIE</button>
+          </div>
+          <span id="rCount" class="mono small muted"></span>
         </div>
-        <ol id="rList" class="timeline"></ol>
+        <div class="row wrap-row">
+          <button class="btn ghost sm" id="linkMode" title="Clique une fiche puis une autre pour les relier">Relier des fiches</button>
+          <button class="btn ghost sm" id="tidyBoard">Ranger</button>
+          <span class="sep"></span>
+          <button class="btn ghost sm" id="exportMd">Rapport .md</button>
+          <button class="btn ghost sm" id="exportJson">Sauvegarde .json</button>
+          <label class="btn ghost sm">Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
+        </div>
+        <p class="mono small muted" id="boardHint">Glisse les fiches pour les organiser · double-clic : voir sur la carte · clic sur un fil : le supprimer.</p>
+        <div class="board-scroll" id="boardScroll">
+          <div class="board" id="board"><svg id="strings"></svg></div>
+        </div>
+        <ol id="rList" class="timeline" hidden></ol>
       </div>
     </div>
   </div>
 </section>
 
+<!-- =====================================================
+     À PROPOS · CONDITIONS · CONFIDENTIALITÉ · PARAMÈTRES
+     ===================================================== -->
+<section class="view" id="v-about">
+  <header class="m-head">
+    <div class="m-meta mono"><span>ANNEXE</span><span>À PROPOS</span><span id="aboutVer"></span></div>
+    <h1 class="giant md" data-scramble>À propos</h1>
+  </header>
+  <div class="wrap">
+    <div class="seg mono big-seg" id="aboutTabs">
+      <button class="on" data-tab="info">PROJET</button>
+      <button data-tab="terms">CONDITIONS</button>
+      <button data-tab="privacy">CONFIDENTIALITÉ</button>
+      <button data-tab="settings">PARAMÈTRES</button>
+    </div>
+
+    <div class="tab-pane" data-pane="info">
+      <div class="cols">
+        <div class="card doc">
+          <h2>Le projet</h2>
+          <p>OSINT Hub est un carnet de terrain numérique pour s'entraîner à la recherche en sources ouvertes et à la géolocalisation d'images. Il réunit les outils utiles dans une seule fenêtre et impose une méthode : <b>indice, hypothèse, preuve, coordonnées</b>.</p>
+          <p>C'est un projet personnel, gratuit, sans serveur ni compte. Il n'est affilié à aucun service ni à aucune association cités.</p>
+          <p class="links"><a id="repoLink" href="#" target="_blank" rel="noopener">Code source sur GitHub ↗</a></p>
+        </div>
+        <div class="card doc">
+          <h2>Construit avec</h2>
+          <table class="kv">
+            <tr><td>Carte</td><td>Leaflet · IGN Géoplateforme · OpenStreetMap · Esri</td></tr>
+            <tr><td>Soleil</td><td>SunCalc</td></tr>
+            <tr><td>Métadonnées</td><td>exifr</td></tr>
+            <tr><td>Adresses</td><td>Nominatim (OpenStreetMap)</td></tr>
+            <tr><td>Polices</td><td>Archivo · JetBrains Mono</td></tr>
+            <tr><td>Licence</td><td>MIT</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane doc card" data-pane="terms" hidden><div id="termsDoc"></div></div>
+    <div class="tab-pane doc card" data-pane="privacy" hidden><div id="privacyDoc"></div></div>
+    <div class="tab-pane" data-pane="settings" hidden>
+      <div class="cols">
+        <div class="card">
+          <div class="card-head"><h3>Affichage</h3></div>
+          <div class="setting"><div><b>Thème</b><p class="small muted">Papier (clair) ou nuit (sombre).</p></div>
+            <div class="seg mono" id="themeSeg"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
+          <div class="setting"><div><b>Effets animés</b><p class="small muted">Courbes de niveau, globe, réticule, transitions.</p></div>
+            <label class="switch"><input type="checkbox" id="fxToggle"><span></span></label></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Données</h3></div>
+          <div class="setting"><div><b>Sauvegarder</b><p class="small muted">Télécharge toutes tes données (.json).</p></div><button class="btn ghost sm" id="setExport">Sauvegarder</button></div>
+          <div class="setting"><div><b>Revoir la charte</b><p class="small muted">Réaffiche la fenêtre d'accord au démarrage.</p></div><button class="btn ghost sm" id="setCharter">Afficher</button></div>
+          <div class="setting"><div><b>Effacer toutes les données</b><p class="small muted">Enquêtes, défis, scores, activité, réglages. Irréversible.</p></div><button class="btn danger sm" id="setWipe">Effacer</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot mono">
+  <span>OSINT/HUB <b id="footVer"></b></span>
+  <span>Sources ouvertes uniquement · Disparition : 17</span>
+  <span><a href="#about" data-tab-link="terms">Conditions</a> · <a href="#about" data-tab-link="privacy">Confidentialité</a> · <a id="footRepo" href="#" target="_blank" rel="noopener">GitHub</a></span>
+</footer>
+
 </main>
+
+<!-- Charte au premier lancement -->
+<div class="gate" id="gate" hidden>
+  <div class="gate-box">
+    <p class="mono label">AVANT DE COMMENCER — CHARTE D'UTILISATION</p>
+    <h2>Quatre règles.</h2>
+    <ol class="gate-rules">
+      <li><b>Sources ouvertes uniquement.</b> Aucun piratage, aucune usurpation d'identité, aucun faux profil pour tromper.</li>
+      <li><b>Jamais pour surveiller ou exposer</b> une personne : pas de traque, pas de harcèlement, pas de divulgation d'informations.</li>
+      <li><b>Disparition réelle : le 17 d'abord.</b> Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</li>
+      <li><b>Tes données restent sur ton PC.</b> Tu es responsable de ce que tu y notes ; supprime-le après l'exercice.</li>
+    </ol>
+    <details class="gate-full"><summary class="mono small">LIRE LES CONDITIONS COMPLÈTES</summary><div id="gateTerms" class="doc"></div></details>
+    <label class="gate-check"><input type="checkbox" id="gateOk"> J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité.</label>
+    <button class="btn big wide" id="gateGo" disabled>Accepter et entrer →</button>
+  </div>
+</div>
 
 <!-- Palette de commandes -->
 <div id="palette" class="palette">
   <div class="palette-box">
-    <input id="paletteQ" placeholder="Tape une commande ou un outil…  (Échap pour fermer)" autocomplete="off">
+    <div class="palette-in"><span class="mono">&gt;</span><input id="paletteQ" placeholder="Commande ou outil…" autocomplete="off"></div>
     <ul id="paletteList"></ul>
+    <p class="mono small muted palette-foot">↑↓ naviguer · Entrée valider · Échap fermer</p>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- Transition entre pages -->
+<div id="scan" aria-hidden="true"><span class="mono" id="scanLbl"></span></div>
+<div id="toast" class="mono"></div>
 
+<script src="legal.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

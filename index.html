@@ -5,96 +5,197 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OSINT Hub</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0b1120">
   <link rel="icon" href="icons/icon-192.png">
+  <!-- Bibliothèques externes : carte (Leaflet), soleil (SunCalc), métadonnées photo (exifr) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>🔎 OSINT Hub</h1>
+<div class="app">
+
+  <!-- ===== BARRE LATÉRALE ===== -->
+  <aside class="sidebar">
+    <div class="brand"><img src="icons/icon-192.png" alt=""> <span>OSINT Hub</span></div>
     <nav>
-      <button class="tab active" data-tab="osint">Lanceur OSINT</button>
-      <button class="tab" data-tab="geoint">GEOINT</button>
-      <button class="tab" data-tab="geoguessr">GeoGuessr</button>
-      <button class="tab" data-tab="progress">Progression</button>
-      <button class="tab" data-tab="report">Rapports</button>
+      <button class="nav active" data-view="dashboard"><span>🏠</span>Tableau de bord<kbd>1</kbd></button>
+      <button class="nav" data-view="search"><span>🔎</span>Recherche<kbd>2</kbd></button>
+      <button class="nav" data-view="map"><span>🗺️</span>Carte GEOINT<kbd>3</kbd></button>
+      <button class="nav" data-view="photo"><span>📷</span>Analyse photo<kbd>4</kbd></button>
+      <button class="nav" data-view="training"><span>🎯</span>Entraînement<kbd>5</kbd></button>
+      <button class="nav" data-view="cases"><span>📁</span>Enquêtes<kbd>6</kbd></button>
     </nav>
-  </header>
+    <div class="side-bottom">
+      <div class="mini-timer" title="Chronomètre">
+        <span id="timer">00:00:00</span>
+        <button id="tToggle" class="icon">▶</button>
+        <button id="tReset" class="icon">⟲</button>
+      </div>
+      <div class="active-case">Enquête active :<br><select id="caseSelect"></select></div>
+      <button class="ghost small" id="openPalette">Ctrl + K · commandes</button>
+    </div>
+  </aside>
 
   <main>
-    <!-- 1. Lanceur OSINT -->
-    <section id="osint" class="panel active">
-      <h2>Lanceur OSINT</h2>
-      <label>Pseudo / nom</label>
-      <div class="row">
-        <input id="pseudo" placeholder="ex : jean_dupont69">
-        <button data-search="google">Google Dorks</button>
-        <button data-search="wmn">WhatsMyName</button>
+    <!-- ===== 1. TABLEAU DE BORD ===== -->
+    <section id="dashboard" class="view active">
+      <h1>Bonjour 👋</h1>
+      <p class="muted">Ton poste d'entraînement OSINT &amp; GEOINT. Sources ouvertes uniquement, cadre légal strict.</p>
+      <div class="stats">
+        <div class="stat"><b id="sTime">0 h</b><span>temps d'entraînement</span></div>
+        <div class="stat"><b id="sSessions">0</b><span>sessions GeoGuessr</span></div>
+        <div class="stat"><b id="sChallenges">0 / 0</b><span>défis terminés</span></div>
+        <div class="stat"><b id="sEntries">0</b><span>indices consignés</span></div>
       </div>
-      <label>Lien d'une image (URL publique)</label>
-      <div class="row">
-        <input id="imgUrl" placeholder="https://...jpg">
-        <button data-search="lens">Google Lens</button>
-        <button data-search="yandex">Yandex</button>
-        <button data-search="tineye">TinEye</button>
+      <h2>Accès rapide</h2>
+      <div class="quick">
+        <button data-go="search">🔎 Rechercher un pseudo</button>
+        <button data-go="photo">📷 Analyser une photo</button>
+        <button data-go="map">🗺️ Ouvrir la carte</button>
+        <button data-go="training">🎯 Lancer un entraînement</button>
       </div>
-      <label>URL de page à archiver / consulter</label>
-      <div class="row">
-        <input id="pageUrl" placeholder="https://...">
-        <button data-search="wayback">Wayback Machine</button>
+      <h2>Défis en cours</h2>
+      <ul id="dashTasks" class="list"></ul>
+      <h2>Dernières entrées</h2>
+      <ul id="dashEntries" class="list"></ul>
+    </section>
+
+    <!-- ===== 2. RECHERCHE ===== -->
+    <section id="search" class="view">
+      <h1>Recherche</h1>
+      <div class="bigsearch">
+        <input id="q" placeholder="Pseudo, nom, URL de page ou URL d'image…" autocomplete="off">
+        <span id="qType" class="badge">—</span>
+      </div>
+      <div class="filters">
+        <span class="muted">Filtres Google Dorks :</span>
+        <label><input type="checkbox" class="dork" value="site:facebook.com"> Facebook</label>
+        <label><input type="checkbox" class="dork" value="site:instagram.com"> Instagram</label>
+        <label><input type="checkbox" class="dork" value="site:tiktok.com"> TikTok</label>
+        <label><input type="checkbox" class="dork" value="site:x.com"> X</label>
+        <label><input type="checkbox" class="dork" value="site:linkedin.com"> LinkedIn</label>
+        <label><input type="checkbox" class="dork" value="site:leboncoin.fr"> Leboncoin</label>
+        <label><input type="checkbox" class="dork" value="site:blablacar.fr"> BlaBlaCar</label>
+        <label><input type="checkbox" id="dorkExact" checked> "Expression exacte"</label>
+      </div>
+      <p class="muted small">Requête générée : <code id="dorkPreview">—</code></p>
+      <div id="toolGroups"></div>
+    </section>
+
+    <!-- ===== 3. CARTE ===== -->
+    <section id="map" class="view view-map">
+      <div class="map-wrap">
+        <div id="leaflet"></div>
+        <div class="map-search">
+          <input id="geoQ" placeholder="Adresse, lieu ou « 45.76, 4.83 »">
+          <div id="geoResults"></div>
+        </div>
+      </div>
+      <aside class="map-panel">
+        <h2>Point sélectionné</h2>
+        <p class="muted small">Clique sur la carte pour placer un point.</p>
+        <div class="coords"><code id="coords">—</code><button class="icon" id="copyCoords" title="Copier">📋</button></div>
+        <h3>☀️ Soleil &amp; ombres</h3>
+        <div class="row"><input type="datetime-local" id="sunDate"></div>
+        <div id="sunInfo" class="muted small">—</div>
+        <h3>Ouvrir ce point dans…</h3>
+        <div id="pointTools" class="tool-buttons"></div>
+        <h3>Consigner</h3>
+        <button id="pinToCase" class="wide">📌 Ajouter à l'enquête active</button>
+      </aside>
+    </section>
+
+    <!-- ===== 4. PHOTO ===== -->
+    <section id="photo" class="view">
+      <h1>Analyse photo</h1>
+      <p class="muted">La photo reste sur ton PC : rien n'est envoyé sur Internet.</p>
+      <div id="drop" class="drop">Glisse une image ici ou <label class="link">parcours<input type="file" id="file" accept="image/*" hidden></label><br><small>Ctrl+V fonctionne aussi</small></div>
+      <div class="photo-grid">
+        <div class="photo-view"><img id="preview" alt=""></div>
+        <div>
+          <h3>Métadonnées (EXIF)</h3>
+          <table id="exif" class="kv"><tr><td class="muted">Aucune image chargée</td></tr></table>
+          <button id="exifToMap" class="wide" hidden>🗺️ Voir la position GPS sur la carte</button>
+          <h3>Grille d'observation</h3>
+          <div id="clueGrid"></div>
+          <button id="cluesToCase" class="wide">📌 Envoyer les observations à l'enquête</button>
+        </div>
       </div>
     </section>
 
-    <!-- 2. GEOINT -->
-    <section id="geoint" class="panel">
-      <h2>Boîte à outils GEOINT</h2>
-      <div class="grid" id="geoLinks"></div>
+    <!-- ===== 5. ENTRAÎNEMENT ===== -->
+    <section id="training" class="view">
+      <h1>Entraînement</h1>
+      <div class="cols">
+        <div class="card">
+          <h2>GeoGuessr</h2>
+          <div id="ggLinks" class="tool-buttons"></div>
+          <div class="row">
+            <select id="ggMap"><option>France</option><option>Lyon / AURA</option><option>No Move</option></select>
+            <input id="ggScore" type="number" placeholder="Score">
+            <button id="ggAdd">+</button>
+          </div>
+          <canvas id="ggChart" height="120"></canvas>
+          <ul id="ggList" class="list small"></ul>
+        </div>
+        <div class="card">
+          <h2>Défis &amp; guides</h2>
+          <div class="progress"><div id="taskBar"></div></div>
+          <div class="row"><input id="taskInput" placeholder="Nouveau défi…"><button id="taskAdd">+</button></div>
+          <ul id="taskList" class="list"></ul>
+          <div class="tool-buttons">
+            <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix (Sofia Santos)</a>
+            <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Guides Bellingcat</a>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- 3. GeoGuessr -->
-    <section id="geoguessr" class="panel">
-      <h2>Hub GeoGuessr</h2>
-      <div class="grid" id="ggLinks"></div>
-      <h3>Journal de sessions</h3>
+    <!-- ===== 6. ENQUÊTES ===== -->
+    <section id="cases" class="view">
+      <h1>Enquêtes</h1>
       <div class="row">
-        <select id="ggMap"><option>France</option><option>Lyon / AURA</option><option>No Move</option></select>
-        <input id="ggScore" type="number" placeholder="Score">
-        <button id="ggAdd">Ajouter</button>
+        <input id="newCase" placeholder="Nom d'un nouvel exercice / enquête">
+        <button id="addCase">Créer</button>
+        <button class="ghost" id="renameCase">Renommer</button>
+        <button class="danger" id="delCase">Supprimer</button>
       </div>
-      <ul id="ggList"></ul>
-    </section>
-
-    <!-- 4. Progression -->
-    <section id="progress" class="panel">
-      <h2>Suivi de progression</h2>
-      <div class="timer">
-        <span id="timer">00:00:00</span>
-        <button id="tStart">▶</button><button id="tPause">⏸</button><button id="tReset">⟲</button>
+      <div class="cols">
+        <div class="card">
+          <h2>Nouvel élément</h2>
+          <textarea id="rClue" placeholder="Indice observé"></textarea>
+          <textarea id="rHyp" placeholder="Hypothèse"></textarea>
+          <textarea id="rProof" placeholder="Preuve (source, lien archivé, capture)"></textarea>
+          <input id="rGps" placeholder="GPS (ex : 45.7640, 4.8357)">
+          <div class="row"><input id="rConf" type="range" min="1" max="5" value="3"><span id="rConfLbl">Confiance 3/5</span></div>
+          <button id="rAdd" class="wide">Ajouter</button>
+        </div>
+        <div class="card">
+          <h2>Chronologie</h2>
+          <div class="row">
+            <button class="ghost" id="exportMd">Export .md</button>
+            <button class="ghost" id="exportJson">Sauvegarde .json</button>
+            <label class="ghost btnlike">Importer .json<input type="file" id="importJson" accept=".json" hidden></label>
+          </div>
+          <ol id="rList" class="timeline"></ol>
+        </div>
       </div>
-      <div class="row">
-        <input id="taskInput" placeholder="Nouveau défi (ex : Gralhix #12)">
-        <button id="taskAdd">Ajouter</button>
-      </div>
-      <ul id="taskList"></ul>
-    </section>
-
-    <!-- 5. Rapports -->
-    <section id="report" class="panel">
-      <h2>Générateur de rapports</h2>
-      <input id="rTitle" placeholder="Titre de l'exercice">
-      <textarea id="rClue" placeholder="Indice"></textarea>
-      <textarea id="rHyp" placeholder="Hypothèse"></textarea>
-      <textarea id="rProof" placeholder="Preuve (source, capture, lien archivé)"></textarea>
-      <input id="rGps" placeholder="Coordonnées GPS (ex : 45.7640, 4.8357)">
-      <div class="row">
-        <button id="rAdd">Ajouter l'entrée</button>
-        <button id="rExport">Exporter (.md)</button>
-        <button id="rClear" class="danger">Tout effacer</button>
-      </div>
-      <ol id="rList"></ol>
     </section>
   </main>
+</div>
 
-  <script src="app.js"></script>
+<!-- ===== PALETTE DE COMMANDES ===== -->
+<div id="palette" class="palette" hidden>
+  <div class="palette-box">
+    <input id="paletteQ" placeholder="Tape une commande ou un outil…">
+    <ul id="paletteList"></ul>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="app.js"></script>
 </body>
 </html>

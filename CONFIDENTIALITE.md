@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**OSINT Hub** · Version 1.3 · Dernière mise à jour : 21 novembre 2026
+**OSINT Hub** · Version 6.0.0 · Dernière mise à jour : 21 novembre 2026
 
 ## En bref
 

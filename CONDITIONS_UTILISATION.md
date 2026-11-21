@@ -1,6 +1,6 @@
 # Conditions d'utilisation
 
-**OSINT Hub** · Version 1.0 · Dernière mise à jour : 21 novembre 2026
+**OSINT Hub** · Version 6.0.0 · Dernière mise à jour : 21 novembre 2026
 
 > Ce document est rédigé à titre informatif pour un projet personnel et non commercial. Il ne constitue pas un avis juridique.
 

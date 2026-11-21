@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr" data-theme="paper">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSINT Hub — carnet de terrain</title>
-    <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes. Sources ouvertes uniquement.">
-    <meta name="theme-color" content="#0d0d0d">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icons/icon-192.png">
-    <!-- Polices -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- Bibliothèques : carte (Leaflet), soleil (SunCalc), métadonnées (exifr) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSINT Hub — carnet de terrain</title>
+  <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes. Sources ouvertes uniquement.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <!-- Polices -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Bibliothèques : carte (Leaflet), soleil (SunCalc), métadonnées (exifr) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body data-view="home">
+<button class="skip" id="skipLink">Aller au contenu</button>
 
 <!-- Décor : courbes de niveau animées + réticule -->
 <canvas id="topo" aria-hidden="true"></canvas>
@@ -33,6 +36,7 @@
   <a class="logo" href="#home" title="Accueil (0)"><span class="reticle"></span>OSINT<b>/</b>HUB</a>
   <nav class="nav" id="mainNav"></nav>
   <div class="top-r">
+    <span class="net-badge mono" id="netBadge" hidden>HORS LIGNE</span>
     <div class="tool timer" title="Chronomètre d'entraînement">
       <span class="rec"></span><span id="timer">00:00:00</span>
       <button id="tToggle" title="Démarrer / pause">▶</button>
@@ -90,7 +94,9 @@
   <p class="mono small menu-hint">Touches <kbd>0</kbd>–<kbd>6</kbd> · <kbd>Ctrl</kbd>+<kbd>K</kbd> · <kbd>Échap</kbd> pour fermer</p>
 </div>
 
-<main>
+<nav class="mob-nav" id="mobNav" aria-label="Navigation principale"></nav>
+
+<main id="main">
 
 <!-- =====================================================
      00 · ACCUEIL
@@ -131,6 +137,7 @@
 
   <section class="profile-band">
     <div class="pb-head mono"><span>FIG. 00B — COUPE TOPOGRAPHIQUE</span><span id="pbTitle">—</span><span id="pbStats"></span></div>
+    <p class="net-note pb-net" data-needs-net hidden> Connexion indisponible : les altitudes ne peuvent pas être téléchargées. Les trajets déjà consultés restent disponibles.</p>
     <div class="pb-ctrl">
       <select id="pbPreset" class="sm-sel"></select>
       <label class="mono small">A <select id="pbA" class="sm-sel"></select></label>
@@ -262,6 +269,20 @@
       <label class="toggle"><input type="checkbox" class="dork" value="site:blablacar.fr"><span>BlaBlaCar</span></label>
       <label class="toggle"><input type="checkbox" id="dorkExact" checked><span>"Exact"</span></label>
     </div>
+    <details class="adv" id="advBox">
+      <summary class="mono small">OPÉRATEURS AVANCÉS</summary>
+      <div class="adv-grid">
+        <label class="fl">Dans le titre (intitle:)<input class="adv-in" id="advTitle" placeholder="ex : disparition"></label>
+        <label class="fl">Dans l'adresse (inurl:)<input class="adv-in" id="advUrl" placeholder="ex : profil"></label>
+        <label class="fl">Type de fichier (filetype:)<select class="adv-in" id="advType"><option value="">Tous</option><option>pdf</option><option>doc</option><option>docx</option><option>xls</option><option>xlsx</option><option>ppt</option><option>csv</option><option>txt</option></select></label>
+        <label class="fl">Site précis (site:)<input class="adv-in" id="advSite" placeholder="ex : lyon.fr"></label>
+        <label class="fl">Exclure ces mots<input class="adv-in" id="advNot" placeholder="ex : football vente"></label>
+        <label class="fl">Un de ces mots (OR)<input class="adv-in" id="advOr" placeholder="ex : Lyon Villeurbanne"></label>
+        <label class="fl">Publié après (after:)<input class="adv-in" type="date" id="advAfter"></label>
+        <label class="fl">Publié avant (before:)<input class="adv-in" type="date" id="advBefore"></label>
+      </div>
+      <p class="small muted">Les opérateurs s'ajoutent à la requête Google, Bing et DuckDuckGo. « after: » et « before: » sont propres à Google. <button class="link-btn" id="advReset">Tout effacer</button></p>
+    </details>
     <p class="mono small dork-line"><span class="muted">REQUÊTE :</span> <code id="dorkPreview">—</code> <button class="btn ghost sm" id="copyDork">Copier</button></p>
     <div id="toolGroups"></div>
   </div>
@@ -274,13 +295,16 @@
   <div class="map-wrap">
     <div id="leaflet"></div>
     <div class="map-reticle" aria-hidden="true"></div>
+    <div class="cmp-handle" id="cmpHandle" hidden><span class="mono">AVANT</span><i></i><span class="mono">APRÈS</span></div>
     <div class="map-search panel">
       <input id="geoQ" placeholder="Adresse, lieu ou « 45.76, 4.83 »" autocomplete="off">
       <div id="geoResults"></div>
     </div>
     <aside class="map-panel panel">
+      <button class="mp-toggle mono" id="mapPanelToggle" aria-expanded="true">Réduire ▾</button>
       <div class="m-meta mono"><span>FIG. 03</span><span>CARTE GEOINT</span></div>
       <h2 data-scramble>Point</h2>
+      <p class="net-note" data-needs-net hidden> Connexion indisponible : les fonds de carte, la recherche d'adresse et les outils externes sont indisponibles. Les points de tes fiches restent consultables dans Enquêtes.</p>
       <p class="mono small muted" id="mapHint">Clique sur la carte pour placer un point.</p>
       <div class="coords"><code id="coords">—</code><button class="btn ghost sm" id="copyCoords" title="Copier">Copier</button></div>
 
@@ -293,6 +317,22 @@
 
       <h3 class="mono">⟷ MESURE</h3>
       <div class="row"><button class="btn ghost sm" id="measureBtn">Mesurer une distance</button><span id="measureOut" class="mono small"></span></div>
+
+      <h3 class="mono">◯ RAYON AUTOUR DU POINT</h3>
+      <div class="row"><input id="radKm" type="number" min="0.05" step="0.1" value="1" aria-label="Rayon en kilomètres"><span class="mono small">km</span>
+        <button class="btn ghost sm" id="radAdd">Tracer</button><button class="btn ghost sm" id="radClear" title="Effacer les cercles">✕</button></div>
+      <p class="mono small muted" id="radOut">Ex. : « à moins de 2 km de la gare ».</p>
+
+      <h3 class="mono">◎ CALQUES OVERPASS (OPENSTREETMAP)</h3>
+      <div class="row"><select id="ovPreset" aria-label="Type d'objet à afficher"></select></div>
+      <div class="row" id="ovCustomRow" hidden><input id="ovCustom" placeholder="clé=valeur (ex. shop=bakery)" aria-label="Filtre Overpass personnalisé"></div>
+      <div class="row"><button class="btn ghost sm" id="ovRun">Afficher dans la vue</button><button class="btn ghost sm" id="ovClear" title="Effacer le calque">✕</button></div>
+      <p class="mono small muted" id="ovOut">Affiche les objets de la zone visible (zoom 13 minimum).</p>
+
+      <h3 class="mono">⇆ AVANT / APRÈS</h3>
+      <div class="row"><select id="cmpLayer" aria-label="Photo aérienne ancienne"><option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965">Photos aériennes 1950-1965 (IGN)</option></select></div>
+      <div class="row"><button class="btn ghost sm" id="cmpBtn">Comparer avec aujourd'hui</button></div>
+      <p class="mono small muted" id="cmpOut">Glisse la barre verticale : ancienne photo à gauche, carte actuelle à droite.</p>
 
       <h3 class="mono">📌 CONSIGNER</h3>
       <button class="btn wide" id="pinToCase">Ajouter le point à l'enquête</button>
@@ -310,6 +350,7 @@
     <p class="lead">L'image reste sur ton PC. Glisse-la n'importe où sur la page, ou colle-la avec <kbd>Ctrl</kbd>+<kbd>V</kbd>.</p>
   </header>
   <div class="wrap">
+    <p class="net-note" data-needs-net hidden> Connexion indisponible : la photo s'affiche et les réglages fonctionnent, mais la lecture des métadonnées (EXIF) nécessite une connexion au premier chargement.</p>
     <label id="drop" class="drop">
       <input type="file" id="file" accept="image/*" hidden>
       <span class="drop-ico mono">[ + ]</span>
@@ -358,7 +399,8 @@
         <div class="card">
           <div class="card-head"><h3>Grille d'observation</h3></div>
           <div id="clueGrid"></div>
-          <button class="btn wide" id="cluesToCase">Envoyer les observations à l'enquête</button>
+          <button class="btn wide" id="photoToCase">Créer une fiche avec cette photo →</button>
+          <button class="btn ghost wide" id="cluesToCase">Envoyer seulement les observations</button>
         </div>
       </div>
     </div>
@@ -418,6 +460,28 @@
 
     <!-- Exercices -->
     <div class="tpane" data-tpane="drills" hidden>
+      <p class="net-note" data-needs-net hidden> Connexion indisponible : les quiz Départements, Indices et Outils fonctionnent. « Ombres & heure » et les exercices photo nécessitent une connexion.</p>
+      <div class="card play" id="peCard">
+        <div class="card-head"><h3>Exercice photo : géolocaliser une vraie image</h3><span class="mono small muted">PHOTOS WIKIMEDIA COMMONS · LIBRES DE DROITS</span></div>
+        <div id="peSetup" class="play-setup">
+          <p class="small">Une vraie photo géolocalisée, prise par un photographe bénévole, s'affiche sans son titre. Observe, place ta réponse sur la carte, puis découvre le lieu exact, l'auteur et la licence. 5 photos, 5 000 points maximum par photo.</p>
+          <div class="row wrap-row">
+            <label class="fl inline">Zone <select id="peZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
+            <button class="btn" id="peStart">Lancer l'exercice →</button>
+          </div>
+        </div>
+        <div id="peGame" class="play-game" hidden>
+          <div class="pg-head mono"><span id="peRound">PHOTO 1/5</span><span id="peScore">0 PTS</span><button class="btn ghost sm" id="peSkip">Autre photo</button><button class="btn ghost sm" id="peQuit">Quitter</button></div>
+          <div class="pg-grid">
+            <div class="pe-img" id="peImgBox"><img id="peImg" alt="Photo à géolocaliser"><span class="mono small" id="peLoad">Chargement d'une photo…</span></div>
+            <div class="pg-side">
+              <div id="peMap" class="pg-map"></div>
+              <div id="peResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
+              <button class="btn wide" id="peGuess" disabled>Valider ma réponse</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="quizList" class="quiz-list"></div>
       <div id="quizBox" class="card quiz" hidden></div>
     </div>
@@ -472,6 +536,7 @@
             <div class="chart-box"><canvas id="ggChart"></canvas><span id="ggAvg" class="mono small muted"></span></div>
             <label class="fl inline">Objectif de score <input id="ggGoal" type="number" min="0" max="25000" step="500"></label>
           </div>
+          <div class="card"><div class="card-head"><h3>Analyse de tes parties intégrées</h3><span class="mono small muted">STREET VIEW + EXERCICES PHOTO</span></div><div id="playStats"></div></div>
           <div class="card"><div class="card-head"><h3>Historique</h3><span class="mono small muted" id="ggCount"></span></div><ul id="ggList" class="list sessions"></ul></div>
         </div>
       </div>
@@ -488,8 +553,8 @@
             <label class="fl">Source (facultatif)<input id="memoSrc" placeholder="https://…"></label>
             <button class="btn wide" id="memoAdd">Ajouter au mémo</button>
           </div>
-          <div class="card"><div class="card-head"><h3>Révision</h3><button class="btn ghost sm" id="memoReview">Tirer une carte ↻</button></div>
-            <div id="memoReviewBox" class="flash"><p class="muted small">Tire une carte parmi les indices affichés, devine la zone, puis retourne-la.</p></div></div>
+          <div class="card"><div class="card-head"><h3>Révision espacée</h3><button class="btn sm" id="memoReview">Réviser</button></div>
+            <div id="memoReviewBox" class="flash"></div></div>
         </div>
         <div>
           <div class="memo-tools"><input id="memoQ" placeholder="Rechercher dans le mémo…"><div id="memoChips" class="chips"></div></div>
@@ -519,6 +584,7 @@
         </div>
       </div>
       <div class="case-chips" id="caseChips"></div>
+      <div class="cs-wrap"><input id="caseSearch" placeholder="Rechercher dans toutes les fiches de tous les dossiers…" autocomplete="off" aria-label="Rechercher dans les fiches"><div id="caseResults" class="cs-results"></div></div>
       <div class="row cb-new">
         <input id="newCase" placeholder="Nom d'un nouveau dossier (ex : Gralhix n° 12)">
         <button class="btn" id="addCase">Créer le dossier</button>
@@ -534,6 +600,7 @@
         <label class="fl">Preuve (source, lien archivé, capture)<textarea id="rProof"></textarea></label>
         <label class="fl">Coordonnées GPS<input id="rGps" placeholder="45.7640, 4.8357"></label>
         <label class="fl">Confiance <span id="rConfLbl" class="conf"></span><input id="rConf" type="range" min="1" max="5" value="3"></label>
+        <div class="fl">Images <span class="muted">(bouton, glisser-déposer ou Ctrl+V)</span><div class="thumbs" id="rImgs"></div></div>
         <button class="btn wide" id="rAdd">Ajouter la fiche</button>
         <button class="btn ghost wide" id="rCancel" hidden>Annuler la modification</button>
       </div>
@@ -550,6 +617,7 @@
           <button class="btn ghost sm" id="linkMode" title="Clique une fiche puis une autre pour les relier">Relier des fiches</button>
           <button class="btn ghost sm" id="tidyBoard">Ranger</button>
           <span class="sep"></span>
+          <button class="btn ghost sm" id="exportPdf">Rapport PDF</button>
           <button class="btn ghost sm" id="exportMd">Rapport .md</button>
           <button class="btn ghost sm" id="exportJson">Sauvegarde .json</button>
           <label class="btn ghost sm">Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
@@ -595,6 +663,9 @@
             <tr><td>Soleil</td><td>SunCalc</td></tr>
             <tr><td>Métadonnées</td><td>exifr</td></tr>
             <tr><td>Adresses</td><td>Nominatim (OpenStreetMap)</td></tr>
+            <tr><td>Objets sur la carte</td><td>Overpass API (OpenStreetMap)</td></tr>
+            <tr><td>Photos d'exercice</td><td>Wikimedia Commons (licences libres)</td></tr>
+            <tr><td>Altitudes</td><td>Open-Meteo · Copernicus DEM</td></tr>
             <tr><td>Polices</td><td>Archivo · JetBrains Mono</td></tr>
             <tr><td>Licence</td><td>MIT</td></tr>
           </table>
@@ -618,7 +689,11 @@
         </div>
         <div class="card">
           <div class="card-head"><h3>Données</h3></div>
-          <div class="setting"><div><b>Sauvegarder</b><p class="small muted">Télécharge toutes tes données (.json).</p></div><button class="btn ghost sm" id="setExport">Sauvegarder</button></div>
+          <div class="setting"><div><b>Sauvegarder</b><p class="small muted">Télécharge toutes tes données, images des fiches comprises (.json).</p></div><button class="btn ghost sm" id="setExport">Sauvegarder</button></div>
+          <div class="setting col"><div><b>Sauvegarde automatique dans un dossier</b></div><div id="backupStatus"></div></div>
+          <div class="setting"><div><b>Rappel de sauvegarde</b><p class="small muted">Un bandeau te le rappelle si tu n'as pas sauvegardé depuis…</p></div>
+            <select id="backupEvery" class="sm-sel"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option><option value="0">Jamais</option></select></div>
+          <div class="setting"><div><b>Visite guidée</b><p class="small muted">Présentation de l'interface en 7 étapes.</p></div><button class="btn ghost sm" id="setTour">Lancer</button></div>
           <div class="setting"><div><b>Revoir la charte</b><p class="small muted">Réaffiche la fenêtre d'accord.</p></div><button class="btn ghost sm" id="setCharter">Afficher</button></div>
           <div class="setting"><div><b>Effacer toutes les données</b><p class="small muted">Enquêtes, progression, scores, mémo, réglages. Irréversible.</p></div><button class="btn danger sm" id="setWipe">Effacer</button></div>
         </div>
@@ -636,7 +711,7 @@
 </main>
 
 <!-- Charte au premier lancement -->
-<div class="gate" id="gate" hidden>
+<div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-label="Charte d'utilisation">
   <div class="gate-box">
     <p class="mono label">AVANT DE COMMENCER — CHARTE D'UTILISATION</p>
     <h2>Quatre règles.</h2>
@@ -653,7 +728,7 @@
 </div>
 
 <!-- Palette de commandes -->
-<div id="palette" class="palette">
+<div id="palette" class="palette" role="dialog" aria-modal="true" aria-label="Palette de commandes">
   <div class="palette-box">
     <div class="palette-in"><span class="mono">&gt;</span><input id="paletteQ" placeholder="Commande ou outil…" autocomplete="off"></div>
     <ul id="paletteList"></ul>
@@ -679,12 +754,29 @@
 
 <!-- Transition entre pages -->
 <div id="scan" aria-hidden="true"><span class="mono" id="scanLbl"></span></div>
-<div id="toast" class="mono"></div>
+<div id="toast" class="mono" role="status" aria-live="polite"></div>
 
+<script src="js/00-base.js"></script>
 <script src="legal.js"></script>
 <script src="data.js"></script>
 <script src="world.js"></script>
 <script src="land.js"></script>
-<script src="app.js"></script>
+<!-- Application : un fichier par module, chargés dans cet ordre (voir js/README.md) -->
+<script src="js/01-config.js"></script>
+<script src="js/02-navigation.js"></script>
+<script src="js/03-decor.js"></script>
+<script src="js/04-accueil.js"></script>
+<script src="js/05-chrono.js"></script>
+<script src="js/06-recherche.js"></script>
+<script src="js/07-carte.js"></script>
+<script src="js/08-photo.js"></script>
+<script src="js/09-entrainement.js"></script>
+<script src="js/10-enquetes.js"></script>
+<script src="js/11-sauvegarde.js"></script>
+<script src="js/12-tableau-de-bord.js"></script>
+<script src="js/13-parametres.js"></script>
+<script src="js/14-palette.js"></script>
+<script src="js/15-visite.js"></script>
+<script src="js/16-demarrage.js"></script>
 </body>
 </html>

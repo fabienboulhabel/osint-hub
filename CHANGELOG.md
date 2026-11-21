@@ -1,5 +1,43 @@
 # Historique des versions
 
+## 6.0.0 — 21/11/2026
+
+### Fiabilité
+- Code découpé en 17 modules (`js/`), chargés dans l'ordre ; documentation dans `js/README.md`.
+- Bandeau d'erreur : toute erreur s'affiche avec un bouton « Copier le message ».
+- Sauvegarde automatique dans un dossier choisi (Edge / Chrome), rappel de sauvegarde réglable, sauvegarde .json avec les images.
+- Badge « ⚠ HORS LIGNE » et messages clairs dans les modules qui ont besoin d'Internet.
+
+### Enquêtes et photo
+- Images jointes aux fiches (bouton, glisser-déposer, Ctrl+V), visibles sur le tableau et dans la chronologie, agrandissables.
+- Recherche dans toutes les fiches de tous les dossiers.
+- Rapport PDF mis en page (images comprises).
+- Module Photo : « Créer une fiche avec cette photo » (image, observations et GPS recopiés).
+
+### Carte et recherche
+- Cercle de rayon autour du point.
+- Calques Overpass affichés sur la carte (12 types d'objets + filtre personnalisé).
+- Comparaison avant / après avec les photos aériennes IGN 1950-1965 (barre à glisser).
+- Recherche : opérateurs avancés (intitle, inurl, filetype, site, OR, exclusions, dates).
+
+### Entraînement
+- Exercice photo : 5 vraies photos Wikimedia Commons à géolocaliser, auteur et licence affichés.
+- Quiz « Indices Europe » (15 questions).
+- Mémo : révision espacée (1, 3, 7, 15, 30 jours).
+- Analyse des parties intégrées et exercices photo : erreur moyenne, tendance, lieux les plus ratés.
+- Nouvelle étape du programme (24 au total).
+
+### Finition
+- Visite guidée de 7 étapes au premier lancement (relançable dans les Paramètres).
+- Accessibilité : focus visible, lien « Aller au contenu », boutons nommés pour les lecteurs d'écran, contraste renforcé si demandé par le système.
+- Mobile : barre de navigation en bas, panneau de carte repliable, mises en page adaptées.
+- Page 404, nouvelle icône et favicon.
+- Tests automatiques GitHub Actions à chaque envoi et pull request.
+- Correction : le bouton « NUIT » des paramètres était presque invisible en thème papier.
+
+## 5.4.2 — 21/11/2026
+- Menu de navigation : suit désormais le thème papier.
+
 ## 5.4.1 — 21/11/2026
 - Carte : plus d'écran noir au zoom maximal (les dernières tuiles disponibles sont agrandies au lieu d'être demandées dans le vide).
 - Carte : fond OpenStreetMap retiré (bloqué par ses serveurs, erreur 403). OpenStreetMap reste disponible dans « Ouvrir ce point dans ».

@@ -45,7 +45,9 @@ Il est interdit d'utiliser l'outil pour :
 
 L'outil ouvre ou interroge des services externes : moteurs de recherche, cartes, outils d'archivage, etc. Leur utilisation est soumise à leurs propres conditions, que l'utilisateur s'engage à respecter.
 
-L'outil n'est ni affilié, ni approuvé, ni soutenu par ces services, ni par les associations et organismes cités (notamment ARPD, Bellingcat, Gralhix, GeoGuessr, WorldGuessr, Google, IGN, OpenStreetMap).
+L'outil n'est ni affilié, ni approuvé, ni soutenu par ces services, ni par les associations et organismes cités (notamment ARPD, Bellingcat, Gralhix, GeoGuessr, WorldGuessr, Google, IGN, OpenStreetMap, Wikimedia Commons).
+
+Les photos des exercices proviennent de Wikimedia Commons : elles restent la propriété de leurs auteurs et sont utilisées selon leur licence libre, affichée avec chaque photo.
 
 ## 7. Données
 

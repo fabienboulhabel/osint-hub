@@ -11,6 +11,13 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+# Tests automatiques (installés et générés à la volée)
+node_modules/
+package-lock.json
+test-results/
+playwright-report/
+
 # Sauvegardes et exports personnels (ne jamais publier tes enquêtes)
 osint-hub-sauvegarde-*.json
+osint-hub-auto-*.json
 *.export.md

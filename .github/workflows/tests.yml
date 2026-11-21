@@ -1,0 +1,39 @@
+# Tests automatiques : lancés à chaque envoi sur main et à chaque pull request.
+# Résultat visible dans l'onglet « Actions » du dépôt et directement dans la pull request.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Vérifier la syntaxe et les fichiers
+        run: node tests/check-files.mjs
+
+      - name: Installer Playwright
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Tester le site dans un navigateur
+        run: npx playwright test
+
+      - name: Garder le rapport en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: playwright-report/
+          retention-days: 7

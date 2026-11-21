@@ -1,5 +1,13 @@
 {
+  "name": "osint-hub",
+  "version": "6.0.0",
+  "private": true,
+  "description": "Carnet de terrain OSINT / GEOINT. Ce fichier ne sert qu'aux tests automatiques : le site n'a besoin d'aucune installation.",
+  "scripts": {
+    "check": "node tests/check-files.mjs",
+    "test": "node tests/check-files.mjs && playwright test"
+  },
   "devDependencies": {
-    "eslint": "^10.15.0"
+    "@playwright/test": "^1.48.0"
   }
 }

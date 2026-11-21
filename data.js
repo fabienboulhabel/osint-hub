@@ -71,6 +71,24 @@ window.BANK_FRANCE = [
   ["Quelle colline lyonnaise est surnommée « la colline qui travaille » ?", "La Croix-Rousse", ["Fourvière", "Montchat", "Le mont Cindre"], "Surnom hérité des canuts, les ouvriers de la soie. Fourvière, elle, est « la colline qui prie »."]
 ];
 
+window.BANK_EUROPE = [
+  ["Plaques à fond jaune à l'avant comme à l'arrière : quel pays ?", "Pays-Bas", ["Belgique", "Allemagne", "Italie"], "Le Luxembourg utilise aussi des plaques jaunes. Au Royaume-Uni, seule la plaque arrière est jaune."],
+  ["Plaques blanches avec des caractères rouges : quel pays ?", "Belgique", ["Suisse", "Espagne", "Pays-Bas"], "Les plaques belges sont blanches à lettres rouge bordeaux, avec la bande européenne à gauche."],
+  ["Plaque blanche avant, plaque jaune arrière : quel pays ?", "Royaume-Uni", ["Irlande", "Pays-Bas", "Danemark"], "C'est aussi le seul grand pays d'Europe de l'Ouest où l'on roule à gauche, avec l'Irlande, Malte et Chypre."],
+  ["Plaques sans bande bleue européenne, avec le code du canton et son blason : quel pays ?", "Suisse", ["Autriche", "Allemagne", "Italie"], "La Suisse ne fait pas partie de l'Union européenne : pas de bande bleue."],
+  ["Plaque au format « AA 123 AA » avec une bande bleue de chaque côté : quel pays ?", "Italie", ["France", "Espagne", "Portugal"], "Le format italien ressemble au français. La bande de droite peut porter l'année et le code de la province."],
+  ["Plaque au format « 1234 BCD », bande européenne uniquement à gauche : quel pays ?", "Espagne", ["Portugal", "Italie", "France"], "Le format espagnol commence par quatre chiffres, sans indication de région."],
+  ["Plaque avec un code de ville en lettres et des vignettes rondes : quel pays ?", "Allemagne", ["Autriche", "Suisse", "Pays-Bas"], "Les vignettes rondes sont le contrôle technique et le cachet du Land. Le code au début indique la ville d'immatriculation (B = Berlin, M = Munich)."],
+  ["En Italie, de quelle couleur sont les panneaux de direction d'autoroute ?", "Vert", ["Bleu", "Blanc", "Jaune"], "C'est l'inverse de la France : en Italie, vert = autoroute, bleu = autres routes principales."],
+  ["En Suisse, de quelle couleur sont les panneaux de direction d'autoroute ?", "Vert", ["Bleu", "Jaune", "Blanc"], "Comme en Italie : vert pour l'autoroute, bleu pour les routes principales."],
+  ["En Allemagne, de quelle couleur sont les panneaux d'entrée d'agglomération ?", "Jaune", ["Blanc à bordure rouge", "Bleu", "Vert"], "Panneau jaune avec le nom en noir : un indice très fréquent dans GeoGuessr."],
+  ["En Allemagne, de quelle couleur sont les panneaux de direction d'autoroute ?", "Bleu", ["Vert", "Jaune", "Blanc"], "Bleu pour l'Autobahn, jaune pour les routes fédérales et la plupart des autres routes."],
+  ["Pistes cyclables très souvent revêtues d'asphalte rouge : quel pays ?", "Pays-Bas", ["Espagne", "Italie", "Suisse"], "Le réseau cyclable néerlandais est le plus dense d'Europe, souvent en enrobé rouge."],
+  ["Panneaux bilingues français–néerlandais : quel pays ?", "Belgique", ["Suisse", "Luxembourg", "Pays-Bas"], "À Bruxelles, les panneaux sont bilingues. En Flandre, ils sont en néerlandais seul ; en Wallonie, en français."],
+  ["Dans quel pays parle-t-on officiellement allemand, français, italien et romanche ?", "Suisse", ["Belgique", "Luxembourg", "Autriche"], "La langue des panneaux suisses indique la région : allemand au nord et au centre, français à l'ouest, italien au Tessin."],
+  ["Dans lequel de ces pays roule-t-on à gauche ?", "Malte", ["Portugal", "Grèce", "Croatie"], "En Europe, on roule à gauche au Royaume-Uni, en Irlande, à Malte et à Chypre."]
+];
+
 window.BANK_OSINT = [
   ["Quel outil sert surtout à trouver la première apparition d'une image en ligne ?", "TinEye", ["SunCalc", "Overpass Turbo", "Cartoradio"], "TinEye classe les résultats par date : pratique pour remonter à la source."],
   ["Quel outil calcule la position du soleil pour un lieu, une date et une heure ?", "SunCalc", ["TinEye", "WhatsMyName", "Wayback Machine"], "Indispensable pour la chronolocalisation à partir des ombres."],
@@ -263,6 +281,14 @@ window.PROGRAM = [
         "Ombre longue = soleil bas = début ou fin de journée, ou hiver."],
       done: "Automatique dès que ton record atteint 7/10.",
       tip: "Si tu bloques, ouvre le module Carte, place un point et fais varier l'heure : regarde la ligne d'ombre tourner." },
+    { id: "pe1", t: "Obtenir au moins 12 000 points à un exercice photo", xp: 50, time: "15 min", auto: true, go: "training",
+      why: "Les exercices photo utilisent de vraies images prises par des photographes, sans panneau garanti ni déplacement possible. C'est la situation la plus proche d'une photo publiée sur un réseau social.",
+      how: ["Onglet Exercices › « Exercice photo », zone France pour commencer.",
+        "Avant de cliquer, observe dans l'ordre : relief et végétation, architecture, mobilier urbain, textes visibles.",
+        "Place ta réponse, puis lis le titre et la description de la photo sur Commons : ils expliquent souvent ce que tu n'as pas vu.",
+        "Enregistre l'exercice dans tes sessions à la fin des 5 photos."],
+      done: "Automatique dès qu'un exercice photo enregistré atteint 12 000 points.",
+      tip: "Les photos de monuments sont plus faciles : commence par repérer clocher, château ou pont, puis cherche-le avec Google Lens." },
     { id: "nm3", t: "Dépasser 20 000 points sur une partie", xp: 50, time: "variable", auto: true, gg: true,
       why: "20 000 points sur 25 000, c'est en moyenne 4 000 par manche : la bonne région presque à chaque fois. C'est un bon repère de niveau solide.",
       how: ["Joue sur la carte où tu es le plus à l'aise.",

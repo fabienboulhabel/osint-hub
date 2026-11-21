@@ -1,7 +1,7 @@
 // Service worker : l'application s'ouvre même hors ligne
 // (la carte, les polices et les bibliothèques externes nécessitent Internet)
-const CACHE = "osint-hub-v7"; // ← incrémente ce numéro à chaque mise à jour publiée
-const FILES = ["./", "index.html", "styles.css", "app.js", "data.js", "legal.js", "manifest.json",
+const CACHE = "osint-hub-v10"; // ← incrémente ce numéro à chaque mise à jour publiée
+const FILES = ["./", "index.html", "styles.css", "app.js", "data.js", "world.js", "land.js", "legal.js", "manifest.json",
   "CONDITIONS_UTILISATION.md", "CONFIDENTIALITE.md", "icons/icon-192.png", "icons/icon-512.png"];
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); });
 self.addEventListener("activate", e => e.waitUntil(

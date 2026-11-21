@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**OSINT Hub** · Version 1.1 · Dernière mise à jour : 21 novembre 2026
+**OSINT Hub** · Version 1.2 · Dernière mise à jour : 21 novembre 2026
 
 ## En bref
 
@@ -22,6 +22,7 @@ L'outil utilise le stockage local du navigateur (`localStorage`). Ces données n
 | Activité | Temps d'entraînement, points d'activité par jour |
 | Recherche | Les 8 dernières recherches saisies |
 | Carte | Dernière position et dernier fond de carte affichés |
+| Globe et coupe | Points enregistrés sur le globe, départ et arrivée de la coupe, altitudes déjà téléchargées (cache) |
 | Réglages | Thème, effets, couleur d'accent, ordre du menu, actions rapides, acceptation des conditions |
 
 Supprimer les données du site dans ton navigateur efface tout. Pense à faire une **sauvegarde .json** (module Enquêtes ou Paramètres) si tu veux les conserver.
@@ -36,13 +37,14 @@ Les images déposées dans le module Photo sont lues localement : affichage, ré
 |---|---|---|
 | Google Fonts | Polices d'écriture | Adresse IP |
 | unpkg.com, jsDelivr | Bibliothèques Leaflet, SunCalc, exifr | Adresse IP |
-| IGN Géoplateforme, Esri, OpenStreetMap | Fonds de carte | Adresse IP, zone de carte affichée |
-| Nominatim (OpenStreetMap) | Recherche d'adresse sur la carte | Texte saisi, adresse IP |
+| IGN Géoplateforme, Esri | Fonds de carte | Adresse IP, zone de carte affichée |
+| Nominatim (OpenStreetMap) | Recherche de lieu (carte, globe) et nom du point cliqué sur le globe | Texte saisi ou coordonnées, adresse IP |
+| Open-Meteo | Altitudes de la coupe topographique | Coordonnées des 100 points du trajet, adresse IP |
 | GitHub Pages | Hébergement du site | Adresse IP, journaux techniques |
 
 ## 4. Services ouverts à ta demande
 
-Quand tu cliques sur un outil (Google, Yandex, Street View, GeoGuessr…), un nouvel onglet s'ouvre. Ce service reçoit alors ta requête et applique sa propre politique de confidentialité.
+Quand tu cliques sur un outil, il s'ouvre soit dans la **visionneuse intégrée** (Google Maps, vue satellite, Street View, OpenStreetMap), soit dans un nouvel onglet pour les sites qui interdisent l'intégration (Google, Yandex, GeoGuessr…). Dans les deux cas, ce service reçoit ta requête et applique sa propre politique de confidentialité. La visionneuse peut être désactivée dans les Paramètres.
 
 Bonne pratique (OPSEC) : utilise un navigateur dédié et des comptes neutres, jamais tes profils personnels.
 

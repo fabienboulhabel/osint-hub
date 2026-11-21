@@ -338,3 +338,26 @@ window.GG_CONSTRAINTS = [
   "Pas plus de 5 déplacements par manche",
   "Annonce ta zone à voix haute avant de cliquer"
 ];
+
+/* ---------- Partie intégrée : lieux (centres-villes, généralement couverts par Street View) ----------
+   [ville, latitude, longitude] — tu peux en ajouter. */
+window.PLAY_AURA = [
+  ["Lyon — Bellecour", 45.7578, 4.8320], ["Lyon — Croix-Rousse", 45.7745, 4.8316], ["Villeurbanne — Gratte-Ciel", 45.7676, 4.8800], ["Lyon — Part-Dieu", 45.7606, 4.8590],
+  ["Saint-Étienne", 45.4400, 4.3871], ["Grenoble", 45.1907, 5.7267], ["Annecy", 45.8992, 6.1294], ["Chambéry", 45.5646, 5.9178], ["Valence", 44.9334, 4.8924],
+  ["Clermont-Ferrand", 45.7772, 3.0819], ["Le Puy-en-Velay", 45.0434, 3.8858], ["Aurillac", 44.9264, 2.4400], ["Bourg-en-Bresse", 46.2052, 5.2255], ["Vichy", 46.1277, 3.4260],
+  ["Montluçon", 46.3403, 2.6027], ["Moulins", 46.5660, 3.3330], ["Privas", 44.7353, 4.5990], ["Aubenas", 44.6200, 4.3903], ["Montélimar", 44.5581, 4.7508],
+  ["Vienne", 45.5255, 4.8742], ["Villefranche-sur-Saône", 45.9890, 4.7190], ["Roanne", 46.0360, 4.0680], ["Thonon-les-Bains", 46.3705, 6.4794], ["Chamonix", 45.9237, 6.8694],
+  ["Albertville", 45.6755, 6.3925], ["Annonay", 45.2397, 4.6707], ["Voiron", 45.3640, 5.5900], ["Bourgoin-Jallieu", 45.5863, 5.2740], ["Oyonnax", 46.2567, 5.6556],
+  ["Issoire", 45.5440, 3.2490], ["Romans-sur-Isère", 45.0430, 5.0510], ["Givors", 45.5905, 4.7690], ["Tarare", 45.8960, 4.4330], ["Belley", 45.7590, 5.6880]
+];
+window.PLAY_FR = [
+  ["Paris", 48.8606, 2.3376], ["Marseille", 43.2951, 5.3740], ["Bordeaux", 44.8412, -0.5800], ["Toulouse", 43.6045, 1.4440], ["Nantes", 47.2133, -1.5584],
+  ["Rennes", 48.1113, -1.6800], ["Brest", 48.3904, -4.4861], ["Lille", 50.6365, 3.0635], ["Strasbourg", 48.5818, 7.7509], ["Nancy", 48.6936, 6.1830],
+  ["Dijon", 47.3220, 5.0415], ["Besançon", 47.2378, 6.0241], ["Limoges", 45.8336, 1.2611], ["Poitiers", 46.5802, 0.3404], ["La Rochelle", 46.1591, -1.1520],
+  ["Pau", 43.2951, -0.3708], ["Perpignan", 42.6986, 2.8956], ["Montpellier", 43.6085, 3.8800], ["Nice", 43.6966, 7.2711], ["Ajaccio", 41.9192, 8.7386],
+  ["Rouen", 49.4404, 1.0939], ["Caen", 49.1829, -0.3707], ["Amiens", 49.8941, 2.2958], ["Reims", 49.2583, 4.0317], ["Metz", 49.1193, 6.1757],
+  ["Orléans", 47.9029, 1.9093], ["Tours", 47.3941, 0.6848], ["Le Mans", 48.0061, 0.1996], ["Angers", 47.4784, -0.5632], ["Quimper", 47.9960, -4.1020],
+  ["Bayonne", 43.4929, -1.4748], ["Carcassonne", 43.2130, 2.3491], ["Avignon", 43.9493, 4.8055], ["Colmar", 48.0794, 7.3585], ["Troyes", 48.2973, 4.0744],
+  ["Chartres", 48.4469, 1.4890], ["Saint-Malo", 48.6493, -2.0257], ["Cherbourg", 49.6386, -1.6164], ["Arras", 50.2910, 2.7775], ["Calais", 50.9513, 1.8587],
+  ["Toulon", 43.1242, 5.9280], ["Nîmes", 43.8367, 4.3601], ["Albi", 43.9289, 2.1464], ["Agen", 44.2033, 0.6163], ["Périgueux", 45.1847, 0.7214]
+];

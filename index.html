@@ -82,6 +82,7 @@
       <h4 class="mono">AFFICHAGE</h4>
       <div class="mc-row"><span>Thème</span><div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
       <div class="mc-row"><span>Effets animés</span><label class="switch"><input type="checkbox" id="mcFx"><span></span></label></div>
+      <div class="mc-row"><span>Visionneuse intégrée</span><label class="switch"><input type="checkbox" id="mcViewer"><span></span></label></div>
       <div class="mc-row"><span>Infos en direct sur les tuiles</span><label class="switch"><input type="checkbox" id="mcStats"><span></span></label></div>
       <button class="mbtn" id="mcReset">Réinitialiser la personnalisation</button>
     </div>
@@ -106,19 +107,40 @@
       </div>
     </div>
     <figure class="globe-box">
-      <canvas id="globe"></canvas>
+      <div class="globe-wrap">
+        <canvas id="globe"></canvas>
+        <div class="globe-tools">
+          <button id="gZoomIn" title="Zoomer">+</button><button id="gZoomOut" title="Dézoomer">−</button>
+          <button id="gHome" title="Vue d'ensemble">⌂</button><button id="gSpin" title="Rotation automatique">⟳</button>
+        </div>
+        <div id="globeTip" class="globe-tip mono" hidden></div>
+      </div>
       <figcaption class="mono">
-        <span>FIG. 00 — PROJECTION ORTHOGRAPHIQUE</span>
+        <span>FIG. 00 — LA PLANÈTE · PROJECTION ORTHOGRAPHIQUE</span>
         <span id="globeRead">CENTRE —</span>
-        <span class="muted">Glisser pour tourner · double-clic pour ouvrir la carte</span>
+        <span class="muted">Glisser : tourner · Molette : zoom · Clic : sélectionner · Double-clic : ouvrir la carte</span>
       </figcaption>
+      <div class="gpanel">
+        <div class="gp-search"><input id="gSearch" placeholder="Chercher un lieu dans le monde, ou « 27.98, 86.92 »" autocomplete="off"><div id="gResults"></div></div>
+        <div id="gSel" class="gp-sel"></div>
+        <div class="gp-list"><span class="mono small">MES POINTS</span><ul id="gPoints"></ul></div>
+      </div>
     </figure>
     <div class="hero-foot mono"><span>↓ Faire défiler</span><span id="clock">--:--:--</span><span>LYON · 45.7640 N · 4.8357 E</span></div>
   </div>
 
   <section class="profile-band">
-    <div class="pb-head mono"><span>FIG. 00B — COUPE TOPOGRAPHIQUE SCHÉMATIQUE</span><span>LYON → MONT BLANC · 210 KM</span><span class="muted">Survole le relief</span></div>
+    <div class="pb-head mono"><span>FIG. 00B — COUPE TOPOGRAPHIQUE</span><span id="pbTitle">—</span><span id="pbStats"></span></div>
+    <div class="pb-ctrl">
+      <select id="pbPreset" class="sm-sel"></select>
+      <label class="mono small">A <select id="pbA" class="sm-sel"></select></label>
+      <button class="btn ghost sm" id="pbSwap" title="Inverser A et B">⇄</button>
+      <label class="mono small">B <select id="pbB" class="sm-sel"></select></label>
+      <span class="mono small muted" id="pbState"></span>
+      <span class="mono small muted pb-hint">Astuce : sélectionne un point sur le globe puis « Départ A » / « Arrivée B ».</span>
+    </div>
     <canvas id="profile"></canvas>
+    <p class="pb-src mono">Survol : distance, altitude et position (repérée sur le globe) · Double-clic : ouvrir la carte · Altitudes : Copernicus DEM GLO-90 (© ESA), via Open-Meteo</p>
   </section>
 
   <section class="block">
@@ -402,12 +424,35 @@
 
     <!-- GeoGuessr -->
     <div class="tpane" data-tpane="gg" hidden>
+      <div class="card play">
+        <div class="card-head"><h3>Partie intégrée</h3><span class="mono small muted">STREET VIEW DANS LE HUB · EXPÉRIMENTAL</span></div>
+        <div id="playSetup" class="play-setup">
+          <p class="small">Le même principe que GeoGuessr, sans quitter le site : une image Street View s'affiche, tu cliques sur la carte là où tu penses être. 5 manches, 5 000 points maximum par manche.</p>
+          <div class="row wrap-row">
+            <label class="fl inline">Zone <select id="playZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
+            <label class="fl inline">Mode <select id="playMode"><option value="move">Move (déplacement libre)</option><option value="still">Figé (image fixe)</option></select></label>
+            <button class="btn" id="playStart">Lancer une partie →</button>
+          </div>
+        </div>
+        <div id="playGame" class="play-game" hidden>
+          <div class="pg-head mono"><span id="pgRound">MANCHE 1/5</span><span id="pgScore">0 PTS</span><button class="btn ghost sm" id="pgSkip" title="Si l'image reste noire ou vide">Lieu sans image ? Passer</button><button class="btn ghost sm" id="pgQuit">Quitter</button></div>
+          <div class="pg-grid">
+            <div class="pg-sv"><iframe id="pgFrame" title="Street View" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><div class="pg-mask mono">ADRESSE MASQUÉE</div><div class="pg-still" id="pgStill" hidden></div></div>
+            <div class="pg-side">
+              <div id="pgMap" class="pg-map"></div>
+              <div id="pgResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
+              <button class="btn wide" id="pgGuess" disabled>Valider ma réponse</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="cols">
         <div>
           <div class="card"><div class="card-head"><h3>Défi du jour</h3><span class="mono small muted" id="ggDailyDate"></span></div><div id="ggDaily"></div></div>
           <div class="card"><div class="card-head"><h3>Mes cartes</h3><button class="btn ghost sm" id="ggAddMap">+ Carte</button></div>
             <div id="ggLinks" class="gg-links"></div>
             <p class="small muted">Gratuit et sans compte pour s'échauffer : <a class="link" href="https://www.worldguessr.com/map/france" target="_blank" rel="noopener">WorldGuessr France ↗</a></p>
+            <p class="small muted">GeoGuessr ne peut pas s'afficher à l'intérieur du hub : le site l'interdit, et la connexion à ton compte ne passerait pas. <button class="link-btn" id="ggTryEmbed">Vérifier par toi-même dans la visionneuse</button></p>
           </div>
           <div class="card"><div class="card-head"><h3>Nouvelle session</h3></div>
             <div class="form-grid">
@@ -466,24 +511,31 @@
   </header>
   <div class="wrap">
     <div class="case-bar card">
-      <label class="case-pick mono">DOSSIER ACTIF <select class="caseSelect"></select></label>
-      <div class="row">
-        <input id="newCase" placeholder="Nom d'un nouveau dossier">
-        <button class="btn" id="addCase">Créer</button>
-        <button class="btn ghost" id="renameCase">Renommer</button>
-        <button class="btn danger" id="delCase">Supprimer</button>
+      <div class="cb-top">
+        <div><small class="mono muted">DOSSIER ACTIF</small><h2 id="caseTitle">—</h2></div>
+        <div class="row">
+          <button class="btn ghost sm" id="renameCase">Renommer</button>
+          <button class="btn danger sm" id="delCase">Supprimer</button>
+        </div>
+      </div>
+      <div class="case-chips" id="caseChips"></div>
+      <div class="row cb-new">
+        <input id="newCase" placeholder="Nom d'un nouveau dossier (ex : Gralhix n° 12)">
+        <button class="btn" id="addCase">Créer le dossier</button>
+        <select class="caseSelect" hidden></select>
       </div>
     </div>
 
     <div class="cols cols-cases">
-      <div class="card">
-        <div class="card-head"><h3>Nouvelle fiche</h3></div>
+      <div class="card" id="formCard">
+        <div class="card-head"><h3 id="formTitle">Nouvelle fiche</h3></div>
         <label class="fl">Indice observé<textarea id="rClue"></textarea></label>
         <label class="fl">Hypothèse<textarea id="rHyp"></textarea></label>
         <label class="fl">Preuve (source, lien archivé, capture)<textarea id="rProof"></textarea></label>
         <label class="fl">Coordonnées GPS<input id="rGps" placeholder="45.7640, 4.8357"></label>
         <label class="fl">Confiance <span id="rConfLbl" class="conf"></span><input id="rConf" type="range" min="1" max="5" value="3"></label>
         <button class="btn wide" id="rAdd">Ajouter la fiche</button>
+        <button class="btn ghost wide" id="rCancel" hidden>Annuler la modification</button>
       </div>
 
       <div class="card">
@@ -502,7 +554,7 @@
           <button class="btn ghost sm" id="exportJson">Sauvegarde .json</button>
           <label class="btn ghost sm">Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
         </div>
-        <p class="mono small muted" id="boardHint">Glisse les fiches pour les organiser · double-clic : voir sur la carte · clic sur un fil : le supprimer.</p>
+        <p class="mono small muted" id="boardHint">Glisser : déplacer · ✎ ou double-clic : modifier · clic sur le GPS : voir sur la carte · clic sur un fil : le supprimer.</p>
         <div class="board-scroll" id="boardScroll">
           <div class="board" id="board"><svg id="strings"></svg></div>
         </div>
@@ -559,6 +611,8 @@
             <div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
           <div class="setting"><div><b>Effets animés</b><p class="small muted">Courbes de niveau, globe, réticule, transitions.</p></div>
             <label class="switch"><input type="checkbox" id="fxToggle"><span></span></label></div>
+          <div class="setting"><div><b>Visionneuse intégrée</b><p class="small muted">Ouvre Google Maps, la vue satellite, Street View et OpenStreetMap dans un panneau du hub. Les sites qui l'interdisent s'ouvrent dans un onglet.</p></div>
+            <label class="switch"><input type="checkbox" id="viewerToggle"><span></span></label></div>
           <div class="setting"><div><b>Menu, couleur, actions rapides</b><p class="small muted">Ordre des modules, modules masqués, couleur d'accent.</p></div>
             <button class="btn ghost sm" id="setCustom">Personnaliser</button></div>
         </div>
@@ -607,12 +661,30 @@
   </div>
 </div>
 
+<!-- Visionneuse intégrée -->
+<aside id="viewer" class="viewer" hidden>
+  <div class="vw-resize" id="vwResize" title="Glisser pour redimensionner"></div>
+  <div class="vw-bar">
+    <span class="mono vw-lbl">VISIONNEUSE</span>
+    <div class="vw-tabs" id="vwTabs"></div>
+    <div class="vw-act">
+      <button id="vwExt" title="Ouvrir dans un onglet du navigateur">↗</button>
+      <button id="vwFull" title="Agrandir / réduire">⤢</button>
+      <button id="vwClose" title="Fermer la visionneuse">✕</button>
+    </div>
+  </div>
+  <p class="vw-note mono" id="vwNote"></p>
+  <div class="vw-body" id="vwBody"></div>
+</aside>
+
 <!-- Transition entre pages -->
 <div id="scan" aria-hidden="true"><span class="mono" id="scanLbl"></span></div>
 <div id="toast" class="mono"></div>
 
 <script src="legal.js"></script>
 <script src="data.js"></script>
+<script src="world.js"></script>
+<script src="land.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

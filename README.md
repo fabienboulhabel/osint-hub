@@ -34,13 +34,14 @@ Une application web installable (PWA), sans serveur ni compte : tout reste dans 
 
 | # | Module | Ce qu'il fait |
 |---|---|---|
-| 00 | **Accueil** | Globe interactif, présentation des modules, méthode, règles de terrain |
+| 00 | **Accueil** | Globe de la planète (pays au survol, zoom, sélection et enregistrement de points, recherche mondiale), coupe topographique entre deux points du monde, méthode, règles |
 | 01 | **Tableau de bord** | Statistiques, rang et XP, calendrier d'activité, prochaines étapes, conseil du jour |
 | 02 | **Recherche** | Détecte pseudo / nom / URL / image et prépare Dorks, WhatsMyName, recherche inversée, archives |
-| 03 | **Carte GEOINT** | Fonds IGN, satellite, OSM ; outils ouverts sur le point choisi ; soleil et ombres ; mesure de distance |
+| 03 | **Carte GEOINT** | Fonds Plan IGN, photo aérienne IGN, satellite Esri ; outils ouverts sur le point choisi ; soleil et ombres ; mesure de distance |
 | 04 | **Analyse photo** | Métadonnées EXIF et GPS, loupe, réglages contraste/luminosité/inversion, grille, observations |
 | 05 | **Entraînement** | Programme en 5 niveaux, exercices intégrés, suivi GeoGuessr, mémo d'indices, badges |
-| 06 | **Enquêtes** | Chronologie et **tableau d'enquête** (fiches déplaçables reliées par des fils), exports |
+| 06 | **Enquêtes** | Dossiers multiples, fiches modifiables, chronologie et **tableau d'enquête** (fiches déplaçables reliées par des fils), exports |
+| — | **Visionneuse** | Panneau à onglets redimensionnable : Google Maps, satellite, Street View et OpenStreetMap s'affichent dans le hub |
 | — | **Menu** | Tuiles avec infos en direct, actions rapides, résumé du jour ; personnalisable |
 | — | **À propos** | Conditions, confidentialité, paramètres (thème, effets, sauvegarde, effacement) |
 
@@ -50,7 +51,7 @@ Une application web installable (PWA), sans serveur ni compte : tout reste dans 
 |---|---|
 | **Programme** | 23 étapes réparties en 5 niveaux (Fondations → Méthode d'enquêteur). Certaines se valident automatiquement (quiz réussi, nombre de parties GeoGuessr, dossier complet…). XP, 5 rangs et 12 badges |
 | **Exercices** | 4 quiz de 10 questions, jouables au clavier (touches 1 à 4) : Départements (numéro, nom, préfecture, option Auvergne-Rhône-Alpes), Indices France & Lyon, Outils & méthode, Ombres & heure (calculé avec SunCalc) |
-| **GeoGuessr** | Tes cartes, défi du jour (carte, mode, objectif, contrainte), journal des sessions avec mode, durée et notes, statistiques filtrables, courbe avec objectif |
+| **GeoGuessr** | Partie intégrée (Street View dans le hub, France ou Lyon / AURA, mode Move ou Figé), tes cartes, défi du jour (carte, mode, objectif, contrainte), journal des sessions avec mode, durée et notes, statistiques filtrables, courbe avec objectif |
 | **Mémo indices** | Fiches d'indices par catégorie et zone, recherche, mode révision façon flashcards |
 
 Le contenu pédagogique se trouve dans `data.js` : tu peux ajouter des questions, des étapes ou des indices sans toucher au reste du code.
@@ -85,6 +86,10 @@ Aucune installation : c'est du HTML, CSS et JavaScript.
 2. **…› Applications › Installer ce site en tant qu'application**.
 3. Clic droit sur l'icône dans la barre des tâches › **Épingler**.
 
+## Pourquoi certains sites s'ouvrent dans un onglet
+
+Google Search, Yandex, TinEye, GeoGuessr et la plupart des grands sites envoient une consigne de sécurité qui interdit leur affichage à l'intérieur d'un autre site. Aucun site ne peut contourner ce blocage. Pour ceux-là, le plus confortable est l'**écran partagé d'Edge** (bouton « Écran partagé » de la barre d'outils) : le hub d'un côté, l'outil de l'autre.
+
 ## Raccourcis
 
 | Touche | Action |
@@ -105,6 +110,8 @@ osint-hub/
 ├── styles.css                  Mise en forme (thèmes papier et nuit)
 ├── app.js                      Logique de l'application
 ├── data.js                     Contenu pédagogique (questions, programme, départements, indices)
+├── world.js                    Contours des pays pour le globe (Natural Earth, domaine public)
+├── land.js                     Terres et îles détaillées (GSHHG) + petits pays et territoires
 ├── legal.js                    Textes légaux intégrés (copie des fichiers .md)
 ├── sw.js                       Service worker (hors ligne)
 ├── manifest.json               Déclaration de l'application installable
@@ -153,8 +160,12 @@ Détails : [Politique de confidentialité](CONFIDENTIALITE.md).
 | [SunCalc](https://github.com/mourner/suncalc) | Position du soleil (carte et exercice « Ombres & heure ») |
 | [exifr](https://github.com/MikeKovarik/exifr) | Lecture des métadonnées photo |
 | [IGN Géoplateforme](https://geoservices.ign.fr) | Plan IGN et photographies aériennes |
-| [OpenStreetMap](https://www.openstreetmap.org) / Nominatim | Fond de carte, recherche d'adresse |
+| [OpenStreetMap](https://www.openstreetmap.org) / Nominatim | Recherche d'adresse, lien et visionneuse « OpenStreetMap » |
 | Esri World Imagery | Imagerie satellite |
+| [Open-Meteo](https://open-meteo.com) | Altitudes (Copernicus DEM GLO-90 © ESA) pour la coupe topographique |
+| [Natural Earth](https://www.naturalearthdata.com) | Contours des pays du globe (domaine public) |
+| [GSHHG](https://www.soest.hawaii.edu/pwessel/gshhg/) | Terres et îles du globe (licence LGPL) |
+| Google Maps (intégration sans clé) | Visionneuse : carte, satellite, Street View |
 | Google Fonts | Polices Archivo et JetBrains Mono |
 
 Ressources de formation citées : [Gralhix](https://gralhix.com) (Sofia Santos), [Bellingcat](https://www.bellingcat.com), [GeoGuessr](https://www.geoguessr.com), [WorldGuessr](https://www.worldguessr.com), [ARPD](https://www.arpd.fr).

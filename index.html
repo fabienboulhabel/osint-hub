@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSINT Hub</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>🔎 OSINT Hub</h1>
+    <nav>
+      <button class="tab active" data-tab="osint">Lanceur OSINT</button>
+      <button class="tab" data-tab="geoint">GEOINT</button>
+      <button class="tab" data-tab="geoguessr">GeoGuessr</button>
+      <button class="tab" data-tab="progress">Progression</button>
+      <button class="tab" data-tab="report">Rapports</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 1. Lanceur OSINT -->
+    <section id="osint" class="panel active">
+      <h2>Lanceur OSINT</h2>
+      <label>Pseudo / nom</label>
+      <div class="row">
+        <input id="pseudo" placeholder="ex : jean_dupont69">
+        <button data-search="google">Google Dorks</button>
+        <button data-search="wmn">WhatsMyName</button>
+      </div>
+      <label>Lien d'une image (URL publique)</label>
+      <div class="row">
+        <input id="imgUrl" placeholder="https://...jpg">
+        <button data-search="lens">Google Lens</button>
+        <button data-search="yandex">Yandex</button>
+        <button data-search="tineye">TinEye</button>
+      </div>
+      <label>URL de page à archiver / consulter</label>
+      <div class="row">
+        <input id="pageUrl" placeholder="https://...">
+        <button data-search="wayback">Wayback Machine</button>
+      </div>
+    </section>
+
+    <!-- 2. GEOINT -->
+    <section id="geoint" class="panel">
+      <h2>Boîte à outils GEOINT</h2>
+      <div class="grid" id="geoLinks"></div>
+    </section>
+
+    <!-- 3. GeoGuessr -->
+    <section id="geoguessr" class="panel">
+      <h2>Hub GeoGuessr</h2>
+      <div class="grid" id="ggLinks"></div>
+      <h3>Journal de sessions</h3>
+      <div class="row">
+        <select id="ggMap"><option>France</option><option>Lyon / AURA</option><option>No Move</option></select>
+        <input id="ggScore" type="number" placeholder="Score">
+        <button id="ggAdd">Ajouter</button>
+      </div>
+      <ul id="ggList"></ul>
+    </section>
+
+    <!-- 4. Progression -->
+    <section id="progress" class="panel">
+      <h2>Suivi de progression</h2>
+      <div class="timer">
+        <span id="timer">00:00:00</span>
+        <button id="tStart">▶</button><button id="tPause">⏸</button><button id="tReset">⟲</button>
+      </div>
+      <div class="row">
+        <input id="taskInput" placeholder="Nouveau défi (ex : Gralhix #12)">
+        <button id="taskAdd">Ajouter</button>
+      </div>
+      <ul id="taskList"></ul>
+    </section>
+
+    <!-- 5. Rapports -->
+    <section id="report" class="panel">
+      <h2>Générateur de rapports</h2>
+      <input id="rTitle" placeholder="Titre de l'exercice">
+      <textarea id="rClue" placeholder="Indice"></textarea>
+      <textarea id="rHyp" placeholder="Hypothèse"></textarea>
+      <textarea id="rProof" placeholder="Preuve (source, capture, lien archivé)"></textarea>
+      <input id="rGps" placeholder="Coordonnées GPS (ex : 45.7640, 4.8357)">
+      <div class="row">
+        <button id="rAdd">Ajouter l'entrée</button>
+        <button id="rExport">Exporter (.md)</button>
+        <button id="rClear" class="danger">Tout effacer</button>
+      </div>
+      <ol id="rList"></ol>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

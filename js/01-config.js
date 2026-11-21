@@ -1,6 +1,6 @@
 /* OSINT Hub — 01-config.js · voir js/README.md pour l'ordre de chargement */
 /* ---------- 1. CONFIGURATION & UTILITAIRES ---------- */
-const VERSION = "6.0.0";
+const VERSION = "6.0.1";
 const TERMS_VERSION = "1.0";                 // ← augmente-le si tu modifies les conditions : 
 const REPO_URL = "https://github.com/";      // ← remplace par l'adresse de ton dépôt GitHub
 const PREFIX = "osh.";                       // préfixe des données (évite les conflits avec tes autres sites *.github.io)
@@ -60,7 +60,8 @@ settings.order = [...settings.order.filter(v => DEFAULT_ORDER.includes(v)), ...D
 settings.hidden = (settings.hidden || []).filter(v => DEFAULT_ORDER.includes(v));
 if (!Array.isArray(settings.quick)) settings.quick = DEFAULT_QUICK;
 
-const fxOn = () => settings.fx && !reducedMotion;
+// Ton réglage prime ; le réglage Windows « Effets d'animation » ne sert que de valeur par défaut au premier lancement
+const fxOn = () => settings.fx;
 function applySettings() {
   ACCENT = settings.accent;
   document.documentElement.style.setProperty("--accent", ACCENT);

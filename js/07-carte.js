@@ -186,32 +186,105 @@ function ovFilter() {
   const m = $("ovCustom").value.trim().match(/^([\w:.-]+)\s*=\s*(.+)$/);
   return m ? `["${m[1]}"="${m[2].replace(/"/g, "")}"]` : null;
 }
+/* ---------- Traduction des données OpenStreetMap en français ---------- */
+const OSM_KEYS = {
+    amenity: "Équipement", shop: "Commerce", highway: "Voirie", railway: "Ferroviaire", man_made: "Ouvrage", "generator:source": "Source d'énergie",
+    junction: "Carrefour", bridge: "Pont", building: "Bâtiment", brand: "Enseigne", operator: "Exploitant", opening_hours: "Horaires",
+    phone: "Téléphone", "contact:phone": "Téléphone", website: "Site web", "contact:website": "Site web", religion: "Religion", denomination: "Confession",
+    network: "Réseau", route_ref: "Lignes", ref: "Référence", wheelchair: "Accès fauteuil roulant", shelter: "Abri", bench: "Banc",
+    height: "Hauteur", "tower:type": "Type de tour", fuel: "Carburant", "fuel:diesel": "Gazole", "fuel:e10": "SP95-E10", "fuel:octane_98": "SP98",
+    "fuel:lpg": "GPL", "school:FR": "Type d'école", isced: "Niveau", level: "Étage", start_date: "Date de construction", heritage: "Patrimoine",
+    "generator:output:electricity": "Puissance", "drive_through": "Service au volant", "payment:cards": "Carte bancaire", self_service: "Libre-service",
+    "service:vehicle:car_wash": "Lavage", "bridge:name": "Nom du pont", maxweight: "Poids maximal", layer: "Niveau"
+};
+const OSM_VALS = {
+    supermarket: "Supermarché", convenience: "Supérette", bakery: "Boulangerie", butcher: "Boucherie", hairdresser: "Coiffeur", clothes: "Vêtements",
+    pharmacy: "Pharmacie", fuel: "Station-service", school: "École", place_of_worship: "Lieu de culte", bus_stop: "Arrêt de bus",
+    station: "Gare", halt: "Halte ferroviaire", water_tower: "Château d'eau", mast: "Mât", tower: "Tour", communications_tower: "Tour de télécommunications",
+    wind: "Éolien", roundabout: "Rond-point", restaurant: "Restaurant", cafe: "Café", bar: "Bar", fast_food: "Restauration rapide", bank: "Banque",
+    post_office: "Bureau de poste", townhall: "Mairie", police: "Police", fire_station: "Caserne de pompiers", hospital: "Hôpital", doctors: "Cabinet médical",
+    parking: "Parking", toilets: "Toilettes", library: "Bibliothèque", kindergarten: "École maternelle", college: "Établissement supérieur",
+    church: "Église", chapel: "Chapelle", mosque: "Mosquée", synagogue: "Synagogue", temple: "Temple", communication: "Télécommunications",
+    yes: "Oui", no: "Non", limited: "Partiel", designated: "Prévu", christian: "Chrétienne", catholic: "Catholique", roman_catholic: "Catholique",
+    protestant: "Protestante", reformed: "Réformée", orthodox: "Orthodoxe", muslim: "Musulmane", jewish: "Juive", buddhist: "Bouddhiste",
+    primaire: "Primaire", maternelle: "Maternelle", élémentaire: "Élémentaire", collège: "Collège", lycée: "Lycée", lattice: "Treillis", monopole: "Monopole"
+};
+const OSM_DAYS = { Mo: "lun.", Tu: "mar.", We: "mer.", Th: "jeu.", Fr: "ven.", Sa: "sam.", Su: "dim.", PH: "jours fériés", SH: "vacances scolaires" };
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const trVal = v => String(v).split(";").map(x => OSM_VALS[x.trim()] || x.trim().replace(/_/g, " ")).map(cap).join(", ");
+const trHours = h => h === "24/7" ? "24 h/24, 7 j/7" : String(h)
+    .replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH|SH)\b/g, d => OSM_DAYS[d]).replace(/\boff\b/g, "fermé").replace(/-/g, " – ").replace(/;\s*/g, " · ").replace(/,/g, ", ");
+function osmType(t, key) { return trVal(t[key] || t.amenity || t.shop || t.highway || t.railway || t.man_made || "objet"); }
+function osmAddress(t) {
+    const rue = [t["addr:housenumber"], t["addr:street"] || t["addr:place"]].filter(Boolean).join(" ");
+    const ville = [t["addr:postcode"], t["addr:city"]].filter(Boolean).join(" ");
+    return [rue, ville].filter(Boolean).join(", ");
+}
+function osmPopup(el, t, key, ll) {
+    const type = osmType(t, key), name = t["name:fr"] || t.name || t.brand || `${type} sans nom`;
+    const rows = [], add = (l, v) => v && rows.push(`<tr><th>${l}</th><td>${v}</td></tr>`);
+    if (t.brand && t.brand !== name) add("Enseigne", esc(t.brand));
+    if (t.operator && t.operator !== t.brand) add("Exploitant", esc(t.operator));
+    add("Adresse", esc(osmAddress(t)));
+    if (t.opening_hours) add("Horaires", esc(trHours(t.opening_hours)));
+    const tel = t.phone || t["contact:phone"]; if (tel) add("Téléphone", `<a href="tel:${esc(tel.replace(/\s/g, ""))}">${esc(tel)}</a>`);
+    const web = t.website || t["contact:website"]; if (web) add("Site web", `<a href="${esc(web)}" target="_blank" rel="noopener">${esc(web.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))} ↗</a>`);
+    const shown = new Set(["name", "name:fr", "brand", "operator", "opening_hours", "phone", "contact:phone", "website", "contact:website", key]);
+    Object.keys(t).filter(k => OSM_KEYS[k] && !shown.has(k)).slice(0, 6).forEach(k => add(OSM_KEYS[k], esc(trVal(t[k]))));
+    const raw = Object.entries(t).map(([k, v]) => `<div><span>${esc(k)}</span> = ${esc(v)}</div>`).join("");
+    return `<div class="ovp">
+    <span class="ovp-type mono">${esc(type)}</span>
+    <b class="ovp-name">${esc(name)}</b>
+    ${rows.length ? `<table class="ovp-tbl">${rows.join("")}</table>` : `<p class="ovp-none">Aucune information complémentaire renseignée.</p>`}
+    <details class="ovp-raw"><summary>Données OpenStreetMap brutes (${Object.keys(t).length})</summary><div class="mono">${raw}</div></details>
+    <div class="ovp-act">
+      <button class="btn sm" onclick="selectPoint(${ll[0]},${ll[1]})">Sélectionner ce point</button>
+      <a class="btn ghost sm" href="https://www.openstreetmap.org/${el.type}/${el.id}" target="_blank" rel="noopener">Voir sur OSM ↗</a>
+    </div></div>`;
+}
+
+/* ---------- Calques Overpass ---------- */
 let ovBusy = false;
+// Contrôle côté application : l'objet doit porter exactement le tag demandé
+function ovMatcher(f) {
+    const m = f.match(/^\["([^"]+)"(=|~)"([^"]*)"\]$/);
+    if (!m) return () => true;
+    const [, k, op, v] = m, re = op === "~" ? new RegExp(v) : null;
+    return t => !!t && k in t && (re ? re.test(t[k]) : t[k] === v);
+}
 $("ovRun").onclick = async () => {
-  if (!map || ovBusy) return;
-  if (map.getZoom() < 13) return toast("Zoome davantage (niveau 13 minimum) pour limiter la zone");
-  const f = ovFilter(); if (!f) return toast("Filtre personnalisé : écris clé=valeur (ex. shop=bakery)");
-  const b = map.getBounds(), bb = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => v.toFixed(5)).join(",");
-  const q = `[out:json][timeout:25];(node${f}(${bb});way${f}(${bb}););out center 400;`;
-  ovBusy = true; $("ovOut").textContent = "Requête en cours…";
-  try {
-    const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + enc(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-    if (r.status === 429) throw new Error("Serveur Overpass saturé : réessaie dans une minute");
-    if (!r.ok) throw new Error("Serveur Overpass indisponible (" + r.status + ")");
-    const els = (await r.json()).elements || [];
-    ovLayer.clearLayers();
-    const name = OV_PRESETS[+$("ovPreset").value][0];
-    els.forEach(el => {
-      const ll = el.type === "node" ? [el.lat, el.lon] : el.center ? [el.center.lat, el.center.lon] : null; if (!ll) return;
-      const t = el.tags || {}, label = t.name || t.ref || name;
-      const tags = Object.entries(t).slice(0, 8).map(([k, v]) => `<div class="mono small">${esc(k)} = ${esc(v)}</div>`).join("");
-      L.circleMarker(ll, { radius: 6, color: "#0d0d0d", weight: 1.5, fillColor: ACCENT, fillOpacity: .85 })
-        .bindPopup(`<b>${esc(label)}</b>${tags}<div class="row" style="margin-top:6px"><button class="btn sm" onclick="selectPoint(${ll[0]},${ll[1]})">Sélectionner ce point</button></div>`)
-        .addTo(ovLayer);
-    });
-    $("ovOut").textContent = els.length ? `${els.length} objet(s) « ${name} » dans la vue${els.length >= 400 ? " (limité à 400)" : ""}.` : `Aucun objet « ${name} » dans la vue.`;
-  } catch (err) { $("ovOut").textContent = "Erreur : " + (err.message || "connexion impossible"); }
-  ovBusy = false;
+    if (!map || ovBusy) return;
+    map.invalidateSize(); // taille réelle de la carte (visionneuse, redimensionnement…)
+    if (map.getZoom() < 13) return toast("Zoome davantage (niveau 13 minimum) pour limiter la zone");
+    const f = ovFilter(); if (!f) return toast("Filtre personnalisé : écris clé=valeur (ex. shop=bakery)");
+    const name = OV_PRESETS[+$("ovPreset").value][0], ok = ovMatcher(f);
+    const key = (f.match(/^\["([^"]+)"/) || [])[1];
+    const b = map.getBounds(), bb = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => v.toFixed(5)).join(",");
+    const q = `[out:json][timeout:25];nwr${f}(${bb});out tags center 400;`;
+    ovBusy = true; ovLayer.clearLayers(); $("ovOut").textContent = "Requête en cours…";
+    L.rectangle(b, { color: ACCENT, weight: 1.5, dashArray: "5 5", fill: false, interactive: false }).addTo(ovLayer);
+    try {
+        const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + enc(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+        if (r.status === 429) throw new Error("serveur Overpass saturé, réessaie dans une minute");
+        if (!r.ok) throw new Error("serveur Overpass indisponible (" + r.status + ")");
+        const els = (await r.json()).elements || [];
+        let kept = 0, dropped = 0;
+        els.forEach(el => {
+            const ll = el.type === "node" ? [el.lat, el.lon] : el.center ? [el.center.lat, el.center.lon] : null;
+            const t = el.tags || {};
+            if (!ll || !ok(t) || !b.contains(ll)) { dropped++; return; }
+            kept++;
+            const label = t["name:fr"] || t.name || t.brand || osmType(t, key);
+            L.circleMarker(ll, { radius: 7, color: "#0d0d0d", weight: 1.5, fillColor: ACCENT, fillOpacity: .9 })
+                .bindTooltip(esc(label), { direction: "top", offset: [0, -6], className: "ov-tip" })
+                .bindPopup(osmPopup(el, t, key, ll), { maxWidth: 320, minWidth: 240 })
+                .addTo(ovLayer);
+        });
+        $("ovOut").textContent = kept
+            ? `${kept} résultat${kept > 1 ? "s" : ""} « ${name} » dans la zone en pointillés${kept >= 400 ? " (limité à 400)" : ""}${dropped ? ` · ${dropped} écarté${dropped > 1 ? "s" : ""}` : ""}. Survole un point pour son nom, clique pour sa fiche.`
+            : `Aucun résultat « ${name} » dans la zone en pointillés.`;
+    } catch (err) { $("ovOut").textContent = "Erreur : " + (err.message || "connexion impossible"); }
+    ovBusy = false;
 };
 $("ovClear").onclick = () => { ovLayer?.clearLayers(); $("ovOut").textContent = "Calque effacé."; };
 

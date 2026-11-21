@@ -752,10 +752,6 @@ body:not(.fx) .m-tile { animation: none !important; opacity: 1; transform: none;
   .map-panel { top: auto; left: 16px; width: auto; height: 46%; }
   .hero-foot span:nth-child(2) { display: none; }
 }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .reveal, .m-tile { opacity: 1; transform: none; }
-}
 
 /* ---------- Programme guidé ---------- */
 .how-it-works { display: grid; grid-template-columns: repeat(4, 1fr); border: 1.5px solid var(--ink); background: var(--card); }
@@ -1186,3 +1182,132 @@ html[data-theme="paper"] .menu .switch input:checked + span::after {
 .net-badge { padding: 0 8px; white-space: nowrap; }
 #toast:not(.show) { opacity: 0; visibility: hidden; }
 @media (max-width: 760px) { .cb-new { flex-wrap: wrap; } .cb-new input { max-width: none; flex: 1 1 100%; } .cb-new .btn { flex: 1 1 100%; } .adv-grid { grid-template-columns: 1fr; } }
+/* Effets animés désactivés dans les paramètres */
+body:not(.fx) *, body:not(.fx) *::before, body:not(.fx) *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+body:not(.fx) .reveal, body:not(.fx) .m-tile, body:not(.fx) .h-panel {
+    opacity: 1;
+    transform: none;
+}
+/* ---------- Fiches des calques Overpass ---------- */
+.ovp {
+    font-family: var(--body);
+    min-width: 220px;
+}
+
+.ovp-type {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+}
+
+.ovp-name {
+    display: block;
+    font-family: var(--display);
+    font-stretch: 112%;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    margin: 6px 0 8px;
+}
+
+.ovp-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+
+    .ovp-tbl th {
+        width: 38%;
+        text-align: left;
+        vertical-align: top;
+        padding: 5px 8px 5px 0;
+        font-family: var(--mono);
+        font-size: .64rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .ovp-tbl td {
+        padding: 5px 0;
+        border-bottom: 1px dashed var(--line);
+        line-height: 1.4;
+    }
+
+    .ovp-tbl tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .ovp-tbl a {
+        color: var(--ink);
+        border-bottom: 1.5px solid var(--accent);
+        text-decoration: none;
+    }
+
+.ovp-none {
+    margin: 4px 0;
+    font-size: .82rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.ovp-raw {
+    margin-top: 8px;
+    font-size: .75rem;
+}
+
+    .ovp-raw summary {
+        cursor: pointer;
+        color: var(--muted);
+    }
+
+    .ovp-raw > div {
+        max-height: 130px;
+        overflow: auto;
+        margin-top: 4px;
+        padding: 6px;
+        background: var(--paper-2);
+        font-size: .68rem;
+        line-height: 1.5;
+        word-break: break-all;
+    }
+
+    .ovp-raw span {
+        color: var(--accent);
+    }
+
+.ovp-act {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+    .ovp-act .btn {
+        height: 30px;
+        font-size: .66rem;
+        padding: 0 10px;
+    }
+
+.leaflet-tooltip.ov-tip {
+    background: var(--ink);
+    color: var(--paper);
+    border: 0;
+    border-radius: 0;
+    font-family: var(--mono);
+    font-size: .72rem;
+    padding: 3px 8px;
+    box-shadow: none;
+}
+
+    .leaflet-tooltip.ov-tip::before {
+        border-top-color: var(--ink);
+    }

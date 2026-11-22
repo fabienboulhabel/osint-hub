@@ -387,3 +387,23 @@ window.PLAY_FR = [
   ["Chartres", 48.4469, 1.4890], ["Saint-Malo", 48.6493, -2.0257], ["Cherbourg", 49.6386, -1.6164], ["Arras", 50.2910, 2.7775], ["Calais", 50.9513, 1.8587],
   ["Toulon", 43.1242, 5.9280], ["Nîmes", 43.8367, 4.3601], ["Albi", 43.9289, 2.1464], ["Agen", 44.2033, 0.6163], ["Périgueux", 45.1847, 0.7214]
 ];
+/* Pays frontaliers + Royaume-Uni : [ville (pays), latitude, longitude] */
+window.PLAY_EU = [
+    ["Bruxelles (Belgique)", 50.8467, 4.3525], ["Liège (Belgique)", 50.6326, 5.5797], ["Gand (Belgique)", 51.0543, 3.7174], ["Namur (Belgique)", 50.4674, 4.8718],
+    ["Luxembourg", 49.6116, 6.1319],
+    ["Genève (Suisse)", 46.2044, 6.1432], ["Lausanne (Suisse)", 46.5197, 6.6323], ["Bâle (Suisse)", 47.5596, 7.5886], ["Zurich (Suisse)", 47.3769, 8.5417],
+    ["Fribourg-en-Brisgau (Allemagne)", 47.9990, 7.8421], ["Sarrebruck (Allemagne)", 49.2402, 6.9969], ["Karlsruhe (Allemagne)", 49.0069, 8.4037], ["Cologne (Allemagne)", 50.9375, 6.9603],
+    ["Turin (Italie)", 45.0703, 7.6869], ["Aoste (Italie)", 45.7376, 7.3172], ["Gênes (Italie)", 44.4056, 8.9463], ["Milan (Italie)", 45.4642, 9.1900], ["Vintimille (Italie)", 43.7903, 7.6075],
+    ["Barcelone (Espagne)", 41.3874, 2.1686], ["Saint-Sébastien (Espagne)", 43.3183, -1.9812], ["Pampelune (Espagne)", 42.8125, -1.6458], ["Gérone (Espagne)", 41.9794, 2.8214], ["Saragosse (Espagne)", 41.6488, -0.8891],
+    ["Monaco", 43.7384, 7.4246], ["Andorre-la-Vieille (Andorre)", 42.5063, 1.5218],
+    ["Londres (Royaume-Uni)", 51.5072, -0.1276], ["Douvres (Royaume-Uni)", 51.1279, 1.3134], ["Brighton (Royaume-Uni)", 50.8225, -0.1372], ["Portsmouth (Royaume-Uni)", 50.8198, -1.0880],
+    ["Canterbury (Royaume-Uni)", 51.2802, 1.0789], ["Oxford (Royaume-Uni)", 51.7520, -1.2577], ["Southampton (Royaume-Uni)", 50.9097, -1.4044],
+    ["Cardiff (Royaume-Uni)", 51.4816, -3.1791], ["Bristol (Royaume-Uni)", 51.4545, -2.5879], ["Saint-Hélier (Jersey)", 49.1858, -2.1100], ["Douglas (île de Man)", 54.1500, -4.4820]
+];
+
+/* Zones de jeu : nom, liste de lieux, distance qui fait chuter le score (km), vue de départ de la carte [lat, lng, zoom] */
+window.PLAY_ZONES = {
+    fr: { name: "France", pool: () => window.PLAY_FR, scale: 1250, view: [46.6, 2.4, 5] },
+    aura: { name: "Lyon / AURA", pool: () => window.PLAY_AURA, scale: 400, view: [45.6, 4.9, 7] },
+    eu: { name: "Pays frontaliers + Royaume-Uni", pool: () => window.PLAY_EU, scale: 1800, view: [47.5, 3.5, 4] }
+};

@@ -21,5 +21,7 @@ Un fichier par module. Ils sont chargés **dans l'ordre des numéros** par `inde
 | `14-palette.js` | Palette de commandes (Ctrl+K) et raccourcis clavier |
 | `15-visite.js` | Visite guidée, barre mobile, accessibilité |
 | `16-demarrage.js` | Initialisation : toujours en dernier |
+| `17-voyage.js` | Transition « voyage » entre les pages |
+| `18-reseau.js` | Fond animé : graphe d'enquête |
 
 Pour ajouter un module : crée `NN-nom.js`, ajoute la balise `<script>` à sa place dans `index.html` et le fichier dans la liste `FILES` de `sw.js`.

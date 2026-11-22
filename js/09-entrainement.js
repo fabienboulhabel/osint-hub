@@ -436,7 +436,7 @@ $("ggScore").onkeydown = e => e.key === "Enter" && $("ggAdd").click();
 // --- Partie intégrée (Street View dans le hub)
 const play = (() => {
   let st = null, gmap = null, guessMk = null, layer = null;
-  const SCALE = { fr: 1250, aura: 400 }; // distance (km) qui fait chuter le score
+  const SCALE = Object.fromEntries(Object.entries(PLAY_ZONES).map(([k, z]) => [k, z.scale])); // distance (km) qui fait chuter le score
   const pts = (d, z) => Math.round(5000 * Math.exp(-10 * d / SCALE[z]));
   function ensureMap() {
     if (!window.L) { $("pgResult").textContent = "Carte indisponible (connexion ?)."; return false; }
@@ -453,9 +453,9 @@ const play = (() => {
     setTimeout(() => gmap.invalidateSize(), 60);
     return true;
   }
-  function view() { st.zone === "aura" ? gmap.setView([45.6, 4.9], 7) : gmap.setView([46.6, 2.4], 5); }
+  function view() { { const [la, lo, zm] = PLAY_ZONES[st.zone].view; gmap.setView([la, lo], zm); } }
   function start() {
-    const zone = $("playZone").value, pool = zone === "aura" ? window.PLAY_AURA : window.PLAY_FR;
+    const zone = $("playZone").value, pool = PLAY_ZONES[zone].pool();
     st = { zone, mode: $("playMode").value, list: pick(pool, 5), i: 0, total: 0, res: [] };
     $("playSetup").hidden = true; $("playGame").hidden = false;
     if (!ensureMap()) return;
@@ -490,7 +490,7 @@ const play = (() => {
   function next() {
     st.i++;
     if (st.i < st.list.length) return round();
-    const z = st.zone === "aura" ? "Partie intégrée — Lyon / AURA" : "Partie intégrée — France";
+    const z = "Partie intégrée — " + PLAY_ZONES[st.zone].name;
     $("pgFrame").src = "about:blank";
     $("playGame").hidden = true; $("playSetup").hidden = false;
     $("playSetup").insertAdjacentHTML("afterbegin", `<div class="play-end" id="playEnd"><div class="qz-score">${fmtNum(st.total)}<small>/25 000</small></div>
@@ -509,7 +509,7 @@ const play = (() => {
   $("pgGuess").onclick = guess;
   $("pgSkip").onclick = () => {
     if (!st) return;
-    const pool = (st.zone === "aura" ? window.PLAY_AURA : window.PLAY_FR).filter(x => !st.list.includes(x));
+    const pool = PLAY_ZONES[st.zone].pool().filter(x => !st.list.includes(x));
     st.list[st.i] = pool[(Math.random() * pool.length) | 0]; round(); toast("Nouveau lieu");
   };
   $("pgQuit").onclick = quit;
@@ -590,7 +590,7 @@ function renderPlayStats() {
   if (!playHist.length) return ($("playStats").innerHTML = `<p class="small muted">Joue une partie intégrée ou un exercice photo : tes erreurs moyennes et les lieux les plus ratés apparaîtront ici.</p>`);
   const km = d => d < 1 ? Math.round(d * 1000) + " m" : d.toFixed(d < 10 ? 1 : 0).replace(".", ",") + " km";
   const grp = (f) => Object.values(playHist.reduce((a, r) => { const k = f(r); (a[k] ||= { k, n: 0, d: 0, p: 0 }); a[k].n++; a[k].d += r.d; a[k].p += r.p; return a; }, {}));
-  const byType = grp(r => (r.t === "photo" ? "Photos" : "Street View") + " · " + (r.zone === "aura" ? "Lyon / AURA" : "France"));
+    const byType = grp(r => (r.t === "photo" ? "Photos" : "Street View") + " · " + (PLAY_ZONES[r.zone]?.name || "France"));
   const byPlace = grp(r => r.name).filter(x => x.n >= 1).sort((a, b) => b.d / b.n - a.d / a.n);
   const last10 = playHist.slice(0, 10), prev10 = playHist.slice(10, 20);
   const trend = prev10.length >= 5 ? mean(last10.map(r => r.d)) - mean(prev10.map(r => r.d)) : null;
@@ -610,11 +610,11 @@ function renderPlayStats() {
 // --- Exercice photo : vraies images géolocalisées de Wikimedia Commons
 const photoEx = (() => {
   let st = null, gmap = null, layer = null, mk = null;
-  const SCALE = { fr: 1250, aura: 400 }, pts = (d, z) => Math.round(5000 * Math.exp(-10 * d / SCALE[z]));
+  const SCALE = Object.fromEntries(Object.entries(PLAY_ZONES).map(([k, z]) => [k, z.scale])), pts = (d, z) => Math.round(5000 * Math.exp(-10 * d / SCALE[z]));
   const BAD = /(map|carte|plan|logo|blason|coat[_ ]of[_ ]arms|drawing|diagram|schema|scan|signature|flag|drapeau|\.svg|\.png|\.tif)/i;
   const strip = h => String(h || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
   async function fetchPhoto(zone, avoid) {
-    const pool = zone === "aura" ? window.PLAY_AURA : window.PLAY_FR;
+    const pool = PLAY_ZONES[zone].pool();
     for (let tries = 0; tries < 6; tries++) {
       const [city, lat, lng] = pool[(Math.random() * pool.length) | 0];
       const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=10000&ggslimit=50&ggsnamespace=6&prop=imageinfo|coordinates&iiprop=url|extmetadata|mime|size&iiurlwidth=1400`;
@@ -649,7 +649,7 @@ const photoEx = (() => {
   }
   async function round() {
     st.answered = false; st.guess = null; st.cur = null; mk = null; layer.clearLayers();
-    st.zone === "aura" ? gmap.setView([45.6, 4.9], 7) : gmap.setView([46.6, 2.4], 5);
+    { const [la, lo, zm] = PLAY_ZONES[st.zone].view; gmap.setView([la, lo], zm); }
     $("peRound").textContent = `PHOTO ${st.i + 1}/5`; $("peScore").textContent = `${fmtNum(st.total)} PTS`;
     $("peResult").textContent = "Clique sur la carte pour placer ta réponse."; $("peGuess").disabled = true; $("peGuess").textContent = "Valider ma réponse";
     $("peImg").removeAttribute("src"); $("peLoad").hidden = false; $("peLoad").textContent = "Chargement d'une photo…";
@@ -680,7 +680,7 @@ const photoEx = (() => {
   function next() {
     st.i++;
     if (st.i < 5) return round();
-    const total = st.total, z = st.zone === "aura" ? "Exercice photo — Lyon / AURA" : "Exercice photo — France";
+    const total = st.total, z = "Exercice photo — " + PLAY_ZONES[st.zone].name;
     $("peGame").hidden = true; $("peSetup").hidden = false;
     $("peSetup").insertAdjacentHTML("afterbegin", `<div class="play-end" id="peEnd"><div class="qz-score">${fmtNum(total)}<small>/25 000</small></div>
       <ul class="qz-err">${st.res.map(r => `<li>${esc(r.name)} — ${r.d.toFixed(1).replace(".", ",")} km · <b>${fmtNum(r.p)} pts</b></li>`).join("")}</ul>

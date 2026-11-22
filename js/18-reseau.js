@@ -122,7 +122,12 @@ const reseau = (() => {
     document.body.insertBefore(cv, document.body.firstChild);
     ctx = cv.getContext("2d");
     addEventListener("resize", resize);
-    addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+      // Au-dessus du globe, des cartes, des champs et des boutons, le graphe ne réagit pas (pas d'étiquettes qui gênent)
+      const QUIET = ".globe-box, .card, .panel, input, textarea, select, button, a, .leaflet-container, .viewer, .menu, .palette";
+      addEventListener("mousemove", e => {
+          if (e.target.closest?.(QUIET)) { mouse.x = mouse.y = -9999; return; }
+          mouse.x = e.clientX; mouse.y = e.clientY;
+      }, { passive: true });
     document.addEventListener("mouseleave", () => { mouse.x = mouse.y = -9999; });
     resize(); requestAnimationFrame(loop);
   }

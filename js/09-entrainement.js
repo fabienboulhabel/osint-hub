@@ -148,19 +148,58 @@ function setTrainTab(t) {
 }
 $$("#trainTabs button").forEach(b => b.onclick = () => setTrainTab(b.dataset.ttab));
 
-// --- Défis perso (liste libre)
-let tasks = load("tasks", []).map(x => ({ t: x.t, d: !!x.d }));
-function renderTasks() {
-  $("taskList").innerHTML = tasks.length
-    ? tasks.map((x, i) => `<li class="${x.d ? "done" : ""}"><input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""}><span class="t">${esc(x.t)}</span><button class="del" data-x="${i}">✕</button></li>`).join("")
-    : `<li class="empty">Ajoute tes propres objectifs (ex. « résoudre le défi Gralhix n° 12 »).</li>`;
-  $$("#taskList input").forEach(c => c.onchange = () => { tasks[c.dataset.i].d = c.checked; save("tasks", tasks); if (c.checked) { bump(2); toast("Défi validé"); } renderTasks(); });
-  $$("#taskList .del").forEach(d => d.onclick = () => { tasks.splice(d.dataset.x, 1); save("tasks", tasks); renderTasks(); });
-  const done = tasks.filter(x => x.d).length, pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
-  $("taskBar").style.width = pct + "%"; $("taskPct").textContent = tasks.length ? `${done}/${tasks.length} · ${pct} %` : "";
+// --- Défis perso : liste modifiable, avec des défis proposés par défaut
+const DEFAULT_TASKS = [
+    { t: "Gralhix — premier défi de géolocalisation", url: "https://gralhix.com" },
+    { t: "Bellingcat — guide de géolocalisation", url: "https://www.bellingcat.com/category/resources/how-tos/" },
+    { t: "Maîtriser la recherche d'image inversée (Lens, Yandex, TinEye)", url: "https://tineye.com/" },
+    { t: "Configurer un navigateur dédié (OPSEC)", url: "" },
+    { t: "Archiver une page avec la Wayback Machine", url: "https://web.archive.org/" },
+    { t: "Explorer le Géoportail IGN (sentiers, photos aériennes)", url: "https://www.geoportail.gouv.fr/" }
+];
+const freshDefaults = () => DEFAULT_TASKS.map(x => ({ ...x, d: false }));
+let tasks = load("tasks", null);
+// Premier lancement, ou liste vide héritée d'une version précédente : on propose les défis par défaut une seule fois
+if (!Array.isArray(tasks) || (!tasks.length && !load("tasksSeeded", false))) { tasks = freshDefaults(); save("tasks", tasks); }
+save("tasksSeeded", true);
+tasks = tasks.map(x => ({ t: x.t, d: !!x.d, url: x.url || "" }));
+
+// Ouvre un lien dans la visionneuse du hub (onglet du navigateur si la visionneuse est désactivée)
+function openInHub(url, title) {
+    if (settings.viewer === false) return window.open(url, "_blank", "noopener");
+    viewer.open(title, url, url, "Si la page reste blanche ou affiche « refusé de se connecter », ce site interdit l'affichage intégré : clique ↗ en haut du panneau pour l'ouvrir dans un onglet.");
 }
-$("taskAdd").onclick = () => { const v = $("taskInput").value.trim(); if (!v) return; tasks.push({ t: v, d: false }); save("tasks", tasks); $("taskInput").value = ""; renderTasks(); };
-$("taskInput").onkeydown = e => e.key === "Enter" && $("taskAdd").click();
+function renderTasks() {
+    $("taskList").innerHTML = tasks.length
+        ? tasks.map((x, i) => `<li class="${x.d ? "done" : ""}">
+        <input type="checkbox" data-i="${i}" ${x.d ? "checked" : ""} aria-label="Défi terminé">
+        <span class="t">${esc(x.t)}</span>
+        ${x.url ? `<button class="task-link" data-u="${i}" title="Ouvrir dans le hub : ${esc(x.url)}">Ouvrir ▣</button>` : ""}
+        <button class="del" data-x="${i}" title="Supprimer ce défi" aria-label="Supprimer ce défi">✕</button></li>`).join("")
+        : `<li class="empty">Aucun défi. Ajoute les tiens, ou rétablis la liste proposée.</li>`;
+    $$("#taskList input").forEach(c => c.onchange = () => { tasks[c.dataset.i].d = c.checked; save("tasks", tasks); if (c.checked) { bump(2); toast("Défi validé"); } renderTasks(); });
+    $$("#taskList [data-u]").forEach(b => b.onclick = () => { const x = tasks[b.dataset.u]; openInHub(x.url, trunc(x.t, 30)); });
+    $$("#taskList .del").forEach(d => d.onclick = () => {
+        const x = tasks[d.dataset.x]; if (!confirm(`Supprimer « ${x.t} » ?`)) return;
+        tasks.splice(d.dataset.x, 1); save("tasks", tasks); renderTasks();
+    });
+    const done = tasks.filter(x => x.d).length, pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+    $("taskBar").style.width = pct + "%"; $("taskPct").textContent = tasks.length ? `${done}/${tasks.length} · ${pct} %` : "";
+    const missing = DEFAULT_TASKS.filter(dft => !tasks.some(x => x.t === dft.t)).length;
+    $("taskReset").hidden = !missing; $("taskReset").textContent = `Rétablir les défis proposés (${missing})`;
+}
+$("taskAdd").onclick = () => {
+    const v = $("taskInput").value.trim(); if (!v) return toast("Écris d'abord le défi");
+    let u = $("taskUrl").value.trim();
+    if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+    tasks.push({ t: v, d: false, url: u }); save("tasks", tasks);
+    $("taskInput").value = ""; $("taskUrl").value = ""; renderTasks();
+};
+$("taskInput").onkeydown = $("taskUrl").onkeydown = e => e.key === "Enter" && $("taskAdd").click();
+$("taskReset").onclick = () => {
+    DEFAULT_TASKS.forEach(dft => { if (!tasks.some(x => x.t === dft.t)) tasks.push({ ...dft, d: false }); });
+    save("tasks", tasks); renderTasks(); toast("Défis proposés rétablis");
+};
 
 // --- Exercices (quiz)
 const mcq = (q, correct, wrong, explain) => { const opts = shuffle([correct, ...wrong.slice(0, 3)]); return { q, opts, a: opts.indexOf(correct), explain }; };

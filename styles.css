@@ -1331,3 +1331,53 @@ body:not(.fx) .reveal, body:not(.fx) .m-tile, body:not(.fx) .h-panel {
 #topo {
     display: none;
 }
+/* ---------- Défis perso ---------- */
+.task-add #taskInput {
+    flex: 2;
+}
+
+.task-add #taskUrl {
+    flex: 1.4;
+}
+
+.task-link {
+    flex: none;
+    font-family: var(--mono);
+    font-size: .68rem;
+    font-weight: 800;
+    padding: 4px 9px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+    .task-link:hover {
+        background: var(--ink);
+        color: var(--paper);
+    }
+
+#taskReset {
+    margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+    .task-add {
+        flex-wrap: wrap;
+    }
+
+        .task-add input {
+            flex: 1 1 100%;
+        }
+}
+/* ---------- Le graphe ne passe plus derrière le globe ni ses champs ---------- */
+.globe-box {
+    position: relative;
+    z-index: 1;
+    background: var(--paper);
+    box-shadow: 0 0 0 28px var(--paper);
+}
+
+.gp-search input, .gp-sel, .gp-list li {
+    background: var(--card);
+}

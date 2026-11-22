@@ -2,7 +2,7 @@
 <html lang="fr" data-theme="paper">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0", viewport-fit=cover>
     <title>OSINT Hub — carnet de terrain</title>
     <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes. Sources ouvertes uniquement.">
     <meta name="theme-color" content="#0d0d0d">
@@ -127,7 +127,7 @@
                         <span class="muted">Glisser : tourner · Molette : zoom · Clic : sélectionner · Double-clic : ouvrir la carte</span>
                     </figcaption>
                     <div class="gpanel">
-                        <div class="gp-search"><input id="gSearch" placeholder="Chercher un lieu dans le monde, ou « 27.98, 86.92 »" autocomplete="off"><div id="gResults"></div></div>
+                        <div class="gp-search"><input id="gSearch" placeholder="Un lieu dans le monde, ou « 27.98, 86.92 »" autocomplete="off"><div id="gResults"></div></div>
                         <div id="gSel" class="gp-sel"></div>
                         <div class="gp-list"><span class="mono small">MES POINTS</span><ul id="gPoints"></ul></div>
                     </div>
@@ -596,9 +596,9 @@
                         </div>
                     </div>
                     <div class="case-chips" id="caseChips"></div>
-                    <div class="cs-wrap"><input id="caseSearch" placeholder="Rechercher dans toutes les fiches de tous les dossiers…" autocomplete="off" aria-label="Rechercher dans les fiches"><div id="caseResults" class="cs-results"></div></div>
+                    <div class="cs-wrap"><input id=caseSearch : placeholder="Rechercher dans toutes les fiches…" autocomplete="off" aria-label="Rechercher dans les fiches"><div id="caseResults" class="cs-results"></div></div>
                     <div class="row cb-new">
-                        <input id="newCase" placeholder="Nom d'un nouveau dossier (ex : Gralhix n° 12)">
+                        <input id=newCase : placeholder="Nouveau dossier (ex : Gralhix 12)">
                         <button class="btn" id="addCase">Créer le dossier</button>
                         <select class="caseSelect" hidden></select>
                     </div>
@@ -802,5 +802,8 @@
     <script src="js/16-demarrage.js"></script>
     <script src="js/17-voyage.js"></script>
     <script src="js/18-reseau.js"></script>
+    <script src="js/19-mobilite.js"></script>
+    <script src="js/20-lieux.js"></script>
+
 </body>
 </html>

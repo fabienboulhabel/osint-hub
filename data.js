@@ -238,7 +238,7 @@ window.PROGRAM = [
         "Quand la ligne d'ombre tracée correspond à celle de la photo, tu as ton heure estimée."],
       done: "Tu as estimé l'heure d'une photo à environ une heure près, avec ton raisonnement noté dans une fiche.",
       tip: "Entraîne-toi d'abord avec l'exercice « Ombres & heure » de l'onglet Exercices." },
-    { id: "map5", t: "Lancer une requête Overpass Turbo (ex. arrêts de bus d'un quartier)", xp: 40, time: "25 min", url: "https://overpass-turbo.eu/",
+        { id: "map5", t: "Lancer une requête Overpass Turbo (ex. arrêts de bus d'un quartier)", xp: 40, time: "25 min", url: "https://overpass-turbo.eu/",
       why: "Overpass interroge OpenStreetMap comme une base de données. Exemple : « tous les endroits où une église est à moins de 100 m d'un pont ». Quand une photo montre plusieurs éléments, ça peut réduire la zone de toute une ville à quelques rues.",
       how: ["Module Carte : place un point dans un quartier de Lyon, puis « Overpass Turbo ».",
         "Une requête d'exemple est déjà écrite (arrêts de bus dans un rayon de 500 m). Clique « Exécuter ».",

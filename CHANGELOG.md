@@ -35,6 +35,19 @@
 - Tests automatiques GitHub Actions à chaque envoi et pull request.
 - Correction : le bouton « NUIT » des paramètres était presque invisible en thème papier.
 
+## 6.6.0 — 22/11/2026
+Module Mobilité (page Recherche) : zone atteignable, test de signalement, transports proches, points utiles, météo, liens.
+Calques de la carte : 68 catégories en français, classées par thème.
+Recherche de lieux fiable : aperçu Nominatim immédiat, Overpass en arrière-plan, import d'un résultat Overpass Turbo.
+Affichage mobile retravaillé ; visite guidée alignée (bulle et pointe).
+Corrections : calques, comparaison avant / après et transition bloqués par la fin de 07-carte.js ; rayon de l'avion.
+
+## 6.1.0 → 6.5.1 — 21–22/11/2026
+Transition « voyage » : globe 3D, avion, traînée, cycle jour / nuit, trafic aérien.
+Graphe d'enquête en fond d'écran ; défis perso par défaut avec liens dans la visionneuse.
+Exercices de géolocalisation étendus aux pays frontaliers et au Royaume-Uni.
+Calques Overpass fiabilisés, fiches traduites en français.
+
 ## 5.4.2 — 21/11/2026
 - Menu de navigation : suit désormais le thème papier.
 

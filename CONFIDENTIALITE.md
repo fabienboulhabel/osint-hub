@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-**OSINT Hub** · Version 6.2.0 · Dernière mise à jour : 22 novembre 2026
+**OSINT Hub** · Version 6.6.0 · Dernière mise à jour : 22 novembre 2026
 
 ## En bref
 
@@ -25,12 +25,13 @@ L'outil utilise le stockage local du navigateur (`localStorage`, et `IndexedDB` 
 | Globe et coupe | Points enregistrés sur le globe, départ et arrivée de la coupe, altitudes déjà téléchargées (cache) |
 | Sauvegarde | Date de la dernière sauvegarde, accès au dossier de sauvegarde automatique si tu en as choisi un |
 | Réglages | Thème, effets, couleur d'accent, ordre du menu, actions rapides, acceptation des conditions |
+| Recherche de lieux | Dernier serveur Overpass ayant répondu, serveurs jugés bloqués par ton réseau, pause après un échec |
 
 Supprimer les données du site dans ton navigateur efface tout, images comprises. Pense à faire une **sauvegarde .json** (module Enquêtes ou Paramètres) si tu veux les conserver.
 
 ## 2. Photos
 
-Les images déposées dans le module Photo sont lues localement : affichage, réglages et lecture des métadonnées EXIF. **Elles ne sont envoyées nulle part.** Une image n'est transmise à un service de recherche inversée que si tu la colles ou l'importes toi-même dans ce service.
+Les images déposées dans le module Photo sont lues localement : affichage, réglages et lecture des métadonnées EXIF. **Elles ne sont envoyées nulle part.** Une image n'est transmise à un service de recherche inversée que si tu la colles ou l'importes toi-même dans ce service. Les fichiers importés depuis Overpass Turbo (.json) sont lus localement et ne sont envoyés nulle part.
 
 ## 3. Sauvegarde automatique dans un dossier
 
@@ -41,11 +42,11 @@ Si tu choisis un dossier dans **À propos › Paramètres**, l'application y éc
 | Service | Rôle | Ce qu'il reçoit |
 |---|---|---|
 | Google Fonts | Polices d'écriture | Adresse IP |
-| unpkg.com, jsDelivr | Bibliothèques Leaflet, SunCalc, exifr | Adresse IP |
+| unpkg.com, jsDelivr | Bibliothèques Leaflet, SunCalc, exifr, globe.gl et ressources 3D du globe | Adresse IP |
 | IGN Géoplateforme, Esri | Fonds de carte | Adresse IP, zone de carte affichée |
-| Nominatim (OpenStreetMap) | Recherche de lieu (carte, globe) et nom du point cliqué sur le globe | Texte saisi ou coordonnées, adresse IP |
-| Open-Meteo | Altitudes de la coupe topographique | Coordonnées des 100 points du trajet, adresse IP |
-| Overpass API (OpenStreetMap) | Calques d'objets sur la carte, à ta demande | Zone de carte affichée et type d'objet recherché, adresse IP |
+| Nominatim (OpenStreetMap) | Recherche de lieu (carte, globe, module Mobilité) et nom du point cliqué sur le globe | Texte saisi ou coordonnées, adresse IP |
+| Open-Meteo | Altitudes de la coupe topographique, météo historique (module Mobilité) | Coordonnées du trajet ou du lieu interrogé, date et heure recherchées, adresse IP |
+| Overpass API (OpenStreetMap) : overpass-api.de, overpass.private.coffee, overpass.openstreetmap.fr | Calques d'objets sur la carte et recherches du module Mobilité | Zone ou point recherché, type d'objet, adresse IP |
 | Wikimedia Commons | Photos des exercices de géolocalisation | Coordonnées d'une ville tirée au hasard, adresse IP |
 | GitHub Pages | Hébergement du site | Adresse IP, journaux techniques |
 
@@ -54,6 +55,12 @@ Si tu choisis un dossier dans **À propos › Paramètres**, l'application y éc
 Quand tu cliques sur un outil, il s'ouvre soit dans la **visionneuse intégrée** (Google Maps, vue satellite, Street View, OpenStreetMap), soit dans un nouvel onglet pour les sites qui interdisent l'intégration (Google, Yandex, GeoGuessr…). Dans les deux cas, ce service reçoit ta requête et applique sa propre politique de confidentialité. La visionneuse peut être désactivée dans les Paramètres.
 
 Bonne pratique (OPSEC) : utilise un navigateur dédié et des comptes neutres, jamais tes profils personnels.
+
+Le module Mobilité peut ouvrir, à ta demande, Google Maps, OpenStreetMap, Rome2rio, SNCF Connect, Trainline, FlixBus, BlaBlaCar, ADS-B Exchange, MarineTraffic et transport.data.gouv.fr. Ces services reçoivent les informations nécessaires à la requête (par exemple coordonnées ou lieux de départ et d'arrivée) ainsi que ton adresse IP. Ils appliquent leur propre politique de confidentialité.
+
+Le module Mobilité ne recherche et ne transmet aucune information sur l'identité des voyageurs. Il sert uniquement à étudier la faisabilité d'un déplacement, les moyens de transport disponibles et les points d'intérêt accessibles à partir d'un lieu connu.
+
+Le lien « Ouvrir dans Overpass Turbo » ouvre overpass-turbo.eu avec la requête de recherche dans l'adresse. Ce service applique sa propre politique de confidentialité.
 
 ## 6. Informations sur d'autres personnes
 

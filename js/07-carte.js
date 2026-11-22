@@ -245,46 +245,73 @@ function osmPopup(el, t, key, ll) {
 
 /* ---------- Calques Overpass ---------- */
 let ovBusy = false;
-// Contrôle côté application : l'objet doit porter exactement le tag demandé
+// Contrôle côté application : l'objet doit porter exactement le tag demandé (le serveur peut renvoyer des objets voisins)
 function ovMatcher(f) {
-    const m = f.match(/^\["([^"]+)"(=|~)"([^"]*)"\]$/);
-    if (!m) return () => true;
-    const [, k, op, v] = m, re = op === "~" ? new RegExp(v) : null;
-    return t => !!t && k in t && (re ? re.test(t[k]) : t[k] === v);
+  const m = f.match(/^\["([^"]+)"(=|~)"([^"]*)"\]$/);
+  if (!m) return () => true;
+  const [, k, op, v] = m, re = op === "~" ? new RegExp(v) : null;
+  return t => !!t && k in t && (re ? re.test(t[k]) : t[k] === v);
+}
+// Interroge Overpass : plusieurs serveurs si le module Mobilité est chargé (overpassFetch), sinon le serveur principal seul
+async function ovQuery(q, onProgress) {
+  if (typeof overpassFetch === "function") return overpassFetch(q, onProgress);
+  const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + enc(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+  if (r.status === 429) throw new Error("serveur Overpass saturé, réessaie dans une minute");
+  if (!r.ok) throw new Error("serveur Overpass indisponible (" + r.status + ")");
+  return (await r.json()).elements || [];
+}
+// Expressions Nominatim équivalentes, pour le secours quand Overpass ne répond pas (résultats partiels : 40 au plus)
+const OV_NOMI = { "Arrêts de bus": "bus stop", "Gares et haltes": "train station", "Lieux de culte": "place of worship", "Pharmacies": "pharmacy",
+  "Stations-service": "petrol station", "Écoles": "school", "Châteaux d'eau": "water tower", "Ponts": "bridge", "Supermarchés": "supermarket" };
+function ovDrawResults(els, ok, key, b) {
+  let kept = 0, dropped = 0;
+  els.forEach(el => {
+    const ll = el.type === "node" ? [el.lat, el.lon] : el.center ? [el.center.lat, el.center.lon] : null;
+    const t = el.tags || {};
+    if (!ll || !ok(t) || !b.contains(ll)) { dropped++; return; }
+    kept++;
+    const label = t["name:fr"] || t.name || t.brand || osmType(t, key);
+    L.circleMarker(ll, { radius: 7, color: "#0d0d0d", weight: 1.5, fillColor: ACCENT, fillOpacity: .9 })
+      .bindTooltip(esc(label), { direction: "top", offset: [0, -6], className: "ov-tip" })
+      .bindPopup(osmPopup(el, t, key, ll), { maxWidth: 320, minWidth: 240 })
+      .addTo(ovLayer);
+  });
+  return { kept, dropped };
 }
 $("ovRun").onclick = async () => {
-    if (!map || ovBusy) return;
-    map.invalidateSize(); // taille réelle de la carte (visionneuse, redimensionnement…)
-    if (map.getZoom() < 13) return toast("Zoome davantage (niveau 13 minimum) pour limiter la zone");
-    const f = ovFilter(); if (!f) return toast("Filtre personnalisé : écris clé=valeur (ex. shop=bakery)");
-    const name = OV_PRESETS[+$("ovPreset").value][0], ok = ovMatcher(f);
-    const key = (f.match(/^\["([^"]+)"/) || [])[1];
-    const b = map.getBounds(), bb = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => v.toFixed(5)).join(",");
-    const q = `[out:json][timeout:25];nwr${f}(${bb});out tags center 400;`;
-    ovBusy = true; ovLayer.clearLayers(); $("ovOut").textContent = "Requête en cours…";
-    L.rectangle(b, { color: ACCENT, weight: 1.5, dashArray: "5 5", fill: false, interactive: false }).addTo(ovLayer);
-    try {
-        const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + enc(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-        if (r.status === 429) throw new Error("serveur Overpass saturé, réessaie dans une minute");
-        if (!r.ok) throw new Error("serveur Overpass indisponible (" + r.status + ")");
-        const els = (await r.json()).elements || [];
-        let kept = 0, dropped = 0;
-        els.forEach(el => {
-            const ll = el.type === "node" ? [el.lat, el.lon] : el.center ? [el.center.lat, el.center.lon] : null;
-            const t = el.tags || {};
-            if (!ll || !ok(t) || !b.contains(ll)) { dropped++; return; }
-            kept++;
-            const label = t["name:fr"] || t.name || t.brand || osmType(t, key);
-            L.circleMarker(ll, { radius: 7, color: "#0d0d0d", weight: 1.5, fillColor: ACCENT, fillOpacity: .9 })
-                .bindTooltip(esc(label), { direction: "top", offset: [0, -6], className: "ov-tip" })
-                .bindPopup(osmPopup(el, t, key, ll), { maxWidth: 320, minWidth: 240 })
-                .addTo(ovLayer);
-        });
-        $("ovOut").textContent = kept
-            ? `${kept} résultat${kept > 1 ? "s" : ""} « ${name} » dans la zone en pointillés${kept >= 400 ? " (limité à 400)" : ""}${dropped ? ` · ${dropped} écarté${dropped > 1 ? "s" : ""}` : ""}. Survole un point pour son nom, clique pour sa fiche.`
-            : `Aucun résultat « ${name} » dans la zone en pointillés.`;
-    } catch (err) { $("ovOut").textContent = "Erreur : " + (err.message || "connexion impossible"); }
-    ovBusy = false;
+  if (!map || ovBusy) return;
+  map.invalidateSize(); // taille réelle de la carte (visionneuse, redimensionnement…)
+  if (map.getZoom() < 13) return toast("Zoome davantage (niveau 13 minimum) pour limiter la zone");
+  const f = ovFilter(); if (!f) return toast("Filtre personnalisé : écris clé=valeur (ex. shop=bakery)");
+  const name = OV_PRESETS[+$("ovPreset").value][0], ok = ovMatcher(f);
+  const key = (f.match(/^\["([^"]+)"/) || [])[1];
+  const b = map.getBounds(), bb = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => v.toFixed(5)).join(",");
+  const q = `[out:json][timeout:25];nwr${f}(${bb});out tags center 400;`;
+  ovBusy = true; ovLayer.clearLayers(); $("ovOut").textContent = "Requête en cours…";
+  L.rectangle(b, { color: ACCENT, weight: 1.5, dashArray: "5 5", fill: false, interactive: false }).addTo(ovLayer);
+  const summary = (r, tag) => r.kept
+    ? `${r.kept} résultat${r.kept > 1 ? "s" : ""} « ${name} » dans la zone en pointillés${r.kept >= 400 ? " (limité à 400)" : ""}${r.dropped ? ` · ${r.dropped} écarté${r.dropped > 1 ? "s" : ""}` : ""}${tag || ""}. Survole un point pour son nom, clique pour sa fiche.`
+    : `Aucun résultat « ${name} » dans la zone en pointillés${tag || ""}.`;
+  try {
+    const els = await ovQuery(q, (host, i, n, sec) => { $("ovOut").textContent = `Interrogation de ${host}… ${sec || 0} s (un serveur public peut mettre une trentaine de secondes)`; });
+    $("ovOut").textContent = summary(ovDrawResults(els, ok, key, b));
+  } catch (err) {
+    if (err.cancelled) { ovBusy = false; return; }
+    // 1. Secours : Nominatim, qui répond même quand Overpass est saturé
+    const phrase = OV_NOMI[name] || (OV_PRESETS[+$("ovPreset").value][1] === null ? (f.match(/="([^"]+)"/) || [])[1] : null);
+    let rescue = null;
+    if (phrase && typeof nominatimBox === "function") {
+      $("ovOut").textContent = "Overpass ne répond pas : recherche de secours (Nominatim)…";
+      try { rescue = ovDrawResults(await nominatimBox(b, phrase), ok, key, b); } catch { rescue = null; }
+    }
+    // 2. Message : résultat de secours, raison de l'échec, lien Overpass Turbo, puis test de connexion
+    const detail = err.report ? err.report.map(r => `${r.host} : ${r.kind}`).join(" ; ") : (err.message || "connexion impossible");
+    const turbo = typeof overpassTurboUrl === "function" ? ` <a class="link" href="${overpassTurboUrl(q)}" target="_blank" rel="noopener">Ouvrir cette requête dans Overpass Turbo ↗</a>` : "";
+    $("ovOut").innerHTML = (rescue ? `<b>${esc(summary(rescue, " (secours Nominatim : résultats partiels, 40 au plus)"))}</b><br>` : "")
+      + `Overpass : ${esc(detail)}.${turbo}<span id="ovStatus" class="muted"> Test de connexion…</span>`;
+    if (typeof overpassStatus === "function") overpassStatus().then(list => { const el = $("ovStatus"); if (el) el.innerHTML = "<br>" + list.map(x => `${x.ok ? "✓" : "✗"} ${esc(x.host)} : ${esc(x.label)}`).join("<br>"); });
+  }
+  ovBusy = false;
 };
 $("ovClear").onclick = () => { ovLayer?.clearLayers(); $("ovOut").textContent = "Calque effacé."; };
 

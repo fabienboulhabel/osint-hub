@@ -3,7 +3,7 @@
 **Carnet de terrain numérique pour s'entraîner à l'OSINT et à la géolocalisation d'images.**
 Une application web installable (PWA), sans serveur ni compte : tout reste dans ton navigateur.
 
-![Version](https://img.shields.io/badge/version-6.0.0-ff3b00?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.6.0-ff3b00?style=flat-square)
 ![HTML](https://img.shields.io/badge/HTML-CSS-JS-0d0d0d?style=flat-square)
 ![PWA](https://img.shields.io/badge/PWA-installable-0d0d0d?style=flat-square)
 ![Licence](https://img.shields.io/badge/licence-MIT-0d0d0d?style=flat-square)
@@ -38,10 +38,10 @@ Une application web installable (PWA), sans serveur ni compte : tout reste dans 
 
 | # | Module | Ce qu'il fait |
 |---|---|---|
-| 00 | **Accueil** | Globe de la planète (pays, îles et petits territoires, zoom, points enregistrés, recherche mondiale), coupe topographique entre deux points du monde, méthode, règles |
+| 00 | **Accueil** | Globe de la planète (pays, îles et petits territoires, zoom, points enregistrés, recherche mondiale), coupe topographique entre deux points du monde, fond animé en graphe d'enquête, méthode, règles. Les changements de page sont une **transition « voyage »** en 3D (globe, avion, cycle jour / nuit), remplacée par une version légère si la machine est lente |
 | 01 | **Tableau de bord** | Statistiques, rang et XP, calendrier d'activité, prochaines étapes, conseil du jour |
-| 02 | **Recherche** | Détecte pseudo / nom / URL / image et prépare Dorks, WhatsMyName, recherche inversée, archives. Opérateurs avancés : `intitle:`, `inurl:`, `filetype:`, `site:`, exclusions, OR, dates |
-| 03 | **Carte GEOINT** | Plan IGN, photo aérienne IGN, satellite Esri ; soleil et ombres ; mesure ; **cercle de rayon** ; **calques Overpass** (arrêts, églises, antennes…) ; **comparaison avant / après** avec les photos aériennes 1950-1965 |
+| 02 | **Recherche** | Détecte pseudo / nom / URL / image et prépare Dorks, WhatsMyName, recherche inversée, archives. Opérateurs avancés : `intitle:`, `inurl:`, `filetype:`, `site:`, exclusions, OR, dates. Module **Mobilité** (colonne de droite) : zone atteignable à pied, à vélo, en voiture, en train et en avion, test d'un signalement (« possible », « serré » ou « impossible »), transports proches, points utiles, météo à l'heure et au lieu, liens d'itinéraires. Les durées sont des estimations, à confirmer avec les horaires réels |
+| 03 | **Carte GEOINT** | Plan IGN, photo aérienne IGN, satellite Esri ; soleil et ombres ; mesure ; **cercle de rayon** ; **68 calques en français** classés par thème (transports, urgences et santé, hébergement, commerces, lieux publics, plus un calque personnalisé `clé=valeur`), avec aperçu rapide et import d'un résultat Overpass Turbo ; **comparaison avant / après** avec les photos aériennes 1950-1965 |
 | 04 | **Analyse photo** | Métadonnées EXIF et GPS, loupe, contraste / luminosité / inversion, grille, observations, **création d'une fiche avec la photo** |
 | 05 | **Entraînement** | Programme guidé en 5 niveaux, quiz, exercices photo, partie intégrée, suivi GeoGuessr, mémo à révision espacée, badges |
 | 06 | **Enquêtes** | Dossiers, fiches **avec images**, tableau à fils rouges, chronologie, **recherche dans toutes les fiches**, rapports **PDF** et Markdown |
@@ -66,7 +66,7 @@ Aucune installation : c'est du HTML, CSS et JavaScript.
 
 1. Cloner le dépôt ou télécharger le ZIP.
 2. Ouvrir `index.html` dans Edge ou Chrome.
-3. Accepter la charte : une visite guidée de 7 étapes présente l'interface.
+3. Accepter la charte : une visite guidée présente l'interface (relançable dans À propos › Paramètres).
 
 > En local (`file://`), tout fonctionne sauf l'installation en application, le mode hors ligne et la sauvegarde automatique dans un dossier, qui demandent une adresse **https**.
 > Une connexion Internet est nécessaire pour la carte, les polices, la lecture des métadonnées, les altitudes et les exercices en ligne. Un badge **⚠ HORS LIGNE** s'affiche quand ce n'est pas le cas.
@@ -122,7 +122,7 @@ osint-hub/
 ├── index.html                  Structure de toutes les pages
 ├── 404.html                    Page « introuvable » pour GitHub Pages
 ├── styles.css                  Mise en forme (thèmes papier et nuit, mobile)
-├── js/                         Code de l'application, un fichier par module (voir js/README.md)
+├── js/                         Code de l'application, 21 fichiers, un par module (voir js/README.md)
 ├── data.js                     Contenu pédagogique (questions, programme, départements, indices, lieux)
 ├── world.js                    Contours des pays pour le globe (Natural Earth, domaine public)
 ├── land.js                     Terres et îles détaillées (GSHHG) + petits pays et territoires
@@ -150,7 +150,9 @@ osint-hub/
 | Ordre et affichage des modules, actions rapides, couleur d'accent | Dans l'application : **MENU › ✎ Personnaliser** |
 | Cartes GeoGuessr | Dans l'application : Entraînement › GeoGuessr (bouton ✎ ou « + Carte ») |
 | Questions, étapes du programme, indices de départ, lieux des parties | `data.js` |
-| Calques Overpass proposés sur la carte | `js/07-carte.js`, liste `OV_PRESETS` |
+| Catégories de calques de la carte | `js/20-lieux.js`, liste `CATALOGUE` : une ligne par catégorie (nom, filtre Overpass, mot de recherche Nominatim ou `null`) |
+| Vitesses et délais du module Mobilité | `js/19-mobilite.js`, liste `MODES` |
+| Villes de la transition « voyage » | `js/17-voyage.js`, liste `VOYAGE` |
 | Lien vers ton dépôt (pied de page) | `js/01-config.js`, constante `REPO_URL` |
 | Polices et couleurs de base | `styles.css`, variables au début du fichier |
 | Textes légaux | Les fichiers `.md`. En ligne, l'application les lit directement ; `legal.js` sert de secours en local |
@@ -177,7 +179,7 @@ npm install && npx playwright install chromium && npm test   # tests complets
 
 1. Modifier les fichiers.
 2. Si un fichier est ajouté dans `js/`, l'ajouter dans `index.html` et dans `sw.js`.
-3. Dans `sw.js`, augmenter le numéro de `CACHE` (par exemple `osint-hub-v11` › `osint-hub-v12`).
+3. Dans `sw.js`, augmenter le numéro de `CACHE` (par exemple `osint-hub-v18` › `osint-hub-v19`).
 4. Commit puis push. Dans le navigateur : `Ctrl` + `F5`.
 
 ## Pourquoi certains sites s'ouvrent dans un onglet
@@ -202,9 +204,11 @@ Détails : [Politique de confidentialité](CONFIDENTIALITE.md).
 | [IGN Géoplateforme](https://geoservices.ign.fr) | Plan IGN, photographies aériennes actuelles et anciennes |
 | Esri World Imagery | Imagerie satellite |
 | [OpenStreetMap](https://www.openstreetmap.org) / Nominatim | Recherche de lieux, lien et visionneuse « OpenStreetMap » |
-| [Overpass API](https://overpass-api.de) | Calques d'objets OpenStreetMap sur la carte |
+| [Overpass API](https://overpass-api.de) | Calques d'objets OpenStreetMap sur la carte et module Mobilité (serveurs overpass-api.de, overpass.private.coffee, overpass.openstreetmap.fr) |
+| [Overpass Turbo](https://overpass-turbo.eu) | Lien « Ouvrir cette requête » et source de l'import d'un résultat |
+| [globe.gl](https://globe.gl) | Transition « voyage » en 3D (chargée en arrière-plan) |
 | [Wikimedia Commons](https://commons.wikimedia.org) | Photos des exercices de géolocalisation (licences libres, auteur affiché) |
-| [Open-Meteo](https://open-meteo.com) | Altitudes (Copernicus DEM GLO-90 © ESA) pour la coupe topographique |
+| [Open-Meteo](https://open-meteo.com) | Altitudes (Copernicus DEM GLO-90 © ESA) pour la coupe topographique, météo du module Mobilité |
 | [Natural Earth](https://www.naturalearthdata.com) | Contours des pays du globe (domaine public) |
 | [GSHHG](https://www.soest.hawaii.edu/pwessel/gshhg/) | Terres et îles du globe (licence LGPL) |
 | Google Maps (intégration sans clé) | Visionneuse : carte, satellite, Street View |

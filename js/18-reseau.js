@@ -111,7 +111,7 @@ const reseau = (() => {
   function loop(ts) {
     requestAnimationFrame(loop);
     // Partout sauf sur la carte (plein écran) ; figé si « Effets animés » est coupé
-    const on = current && current !== "map" && fxOn() && !document.hidden;
+    const on = current && current !== "map" && fxOn() && !document.hidden && !document.body.classList.contains("voyaging");
     cv.style.display = on ? "block" : "none";
     if (!on) { last = 0; return; }
     const dt = last ? Math.min(ts - last, 50) : 16; last = ts;

@@ -1,7 +1,7 @@
 /* OSINT Hub — 01-config.js · voir js/README.md pour l'ordre de chargement */
 /* ---------- 1. CONFIGURATION & UTILITAIRES ---------- */
-const VERSION = "6.2.0";
-const TERMS_VERSION = "1.0";                 // ← augmente-le si tu modifies les conditions : 
+const VERSION = "6.2.1";
+const TERMS_VERSION = "6.2.0";                 // ← augmente-le si tu modifies les conditions : 
 const REPO_URL = "https://github.com/";      // ← remplace par l'adresse de ton dépôt GitHub
 const PREFIX = "osh.";                       // préfixe des données (évite les conflits avec tes autres sites *.github.io)
 const LEGACY = ["cases", "activeCase", "tasks", "sessions", "gg", "ggMaps", "totalSecs", "searchHistory", "mapView", "mapLayer", "report"];

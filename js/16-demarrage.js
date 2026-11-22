@@ -12,7 +12,7 @@ setSunNow();
 loadLegal();
 route();
 renderGPoints(); renderSel(); profile.fillSelects();
-topo.start(); globe.start();
+globe.start();
 refreshNetState(); initBackup(); renderMobNav(); labelIconButtons();
 renderMemoReview(); renderPlayStats();
 if (load("terms", null) !== TERMS_VERSION) showGate();

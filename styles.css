@@ -1328,6 +1328,6 @@ body:not(.fx) .reveal, body:not(.fx) .m-tile, body:not(.fx) .h-panel {
     display: none;
 }
 
-body[data-view="home"] #topo {
+#topo {
     display: none;
 }

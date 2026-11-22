@@ -47,14 +47,7 @@ function show(v) {
     onScroll();
   };
   if (!current || !fxOn()) return apply();
-  const scan = $("scan");
-  $("scanLbl").textContent = VIEWS[v].toUpperCase();
-  scan.className = "in";
-  setTimeout(() => {
-    apply();
-    scan.className = "out";
-    setTimeout(() => { if (token === navToken) scan.className = ""; }, 450);
-  }, 400);
+    voyage(current, v, apply);
 }
 
 // Barre du haut (suit l'ordre et les masquages choisis dans le menu)

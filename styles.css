@@ -630,7 +630,7 @@ body.dragging[data-view="photo"]::after { content: "DÉPOSER L'IMAGE"; position:
   background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 24px 24px; }
 .board { position: relative; width: 1800px; height: 1200px; }
 #strings { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 3; pointer-events: none; }
-#strings path.s { fill: none; stroke: #d92d20; stroke-width: 2.2; filter: drop-shadow(1px 2px 1px #0004); pointer-events: none; }
+#strings path.s { fill: none; stroke: #d92d20; stroke-width: 2.2px; filter: drop-shadow(1px 2px 1px #0004); pointer-events: none; }
 #strings path.hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
 #strings g:hover path.s { stroke: var(--ink); stroke-dasharray: 6 4; }
 .pin-card { position: absolute; width: 230px; background: var(--card); border: 1.5px solid var(--ink); padding: 18px 14px 12px; cursor: grab; user-select: none;
@@ -705,14 +705,6 @@ body[data-view="map"] .foot { display: none; }
 #paletteList li.sel { background: var(--ink); color: var(--paper); }
 #paletteList li.sel small { color: var(--accent); }
 .palette-foot { margin: 0; padding: 8px 16px; }
-
-/* ---------- Transition « balayage » ---------- */
-#scan { position: fixed; inset: 0; z-index: 650; pointer-events: none; background: var(--ink); display: flex; align-items: flex-end; padding: 30px 5vw; transform: translateY(100%); }
-#scan::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--accent); }
-#scan span { color: var(--paper); font-size: clamp(1rem, 2vw, 1.4rem); }
-#scan span::before { content: "▸ CHARGEMENT — "; color: var(--accent); }
-#scan.in { transform: translateY(0); transition: transform .38s cubic-bezier(.8,0,.2,1); }
-#scan.out { transform: translateY(-100%); transition: transform .42s cubic-bezier(.8,0,.2,1); }
 
 /* ---------- Toast ---------- */
 #toast { position: fixed; bottom: 22px; left: 50%; z-index: 800; transform: translate(-50%, 80px); background: var(--ink); color: var(--paper); padding: 12px 18px;
@@ -1311,3 +1303,31 @@ body:not(.fx) .reveal, body:not(.fx) .m-tile, body:not(.fx) .h-panel {
     .leaflet-tooltip.ov-tip::before {
         border-top-color: var(--ink);
     }
+/* ---------- Transition « voyage » ---------- */
+#voyage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 650;
+    pointer-events: none;
+    display: none;
+}
+
+    #voyage.on {
+        display: block;
+    }
+/* ---------- Accueil : graphe d'enquête à la place des courbes de niveau ---------- */
+#reseau {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    display: none;
+}
+
+body[data-view="home"] #topo {
+    display: none;
+}

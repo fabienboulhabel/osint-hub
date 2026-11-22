@@ -1,782 +1,805 @@
 <!DOCTYPE html>
 <html lang="fr" data-theme="paper">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSINT Hub — carnet de terrain</title>
-  <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes. Sources ouvertes uniquement.">
-  <meta name="theme-color" content="#0d0d0d">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <!-- Polices -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
-  <!-- Bibliothèques : carte (Leaflet), soleil (SunCalc), métadonnées (exifr) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Hub — carnet de terrain</title>
+    <meta name="description" content="Entraînement OSINT et GEOINT : recherche, carte, analyse photo, exercices, enquêtes. Sources ouvertes uniquement.">
+    <meta name="theme-color" content="#0d0d0d">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- Polices -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Bibliothèques : carte (Leaflet), soleil (SunCalc), métadonnées (exifr) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body data-view="home">
-<button class="skip" id="skipLink">Aller au contenu</button>
+    <button class="skip" id="skipLink">Aller au contenu</button>
 
-<!-- Décor : courbes de niveau animées + réticule -->
-<canvas id="topo" aria-hidden="true"></canvas>
-<div id="cross" aria-hidden="true"><i class="cx"></i><i class="cy"></i><span id="crossLbl"></span></div>
-<div id="progress"></div>
+    <!-- Décor : courbes de niveau animées + réticule -->
+    <canvas id="topo" aria-hidden="true"></canvas>
+    <div id="cross" aria-hidden="true"><i class="cx"></i><i class="cy"></i><span id="crossLbl"></span></div>
+    <div id="progress"></div>
 
-<!-- =====================================================
-     EN-TÊTE
-     ===================================================== -->
-<header class="top">
-  <a class="logo" href="#home" title="Accueil (0)"><span class="reticle"></span>OSINT<b>/</b>HUB</a>
-  <nav class="nav" id="mainNav"></nav>
-  <div class="top-r">
-    <span class="net-badge mono" id="netBadge" hidden>HORS LIGNE</span>
-    <div class="tool timer" title="Chronomètre d'entraînement">
-      <span class="rec"></span><span id="timer">00:00:00</span>
-      <button id="tToggle" title="Démarrer / pause">▶</button>
-      <button id="tReset" title="Remettre à zéro">↺</button>
+    <!-- =====================================================
+         EN-TÊTE
+         ===================================================== -->
+    <header class="top">
+        <a class="logo" href="#home" title="Accueil (0)"><span class="reticle"></span>OSINT<b>/</b>HUB</a>
+        <nav class="nav" id="mainNav"></nav>
+        <div class="top-r">
+            <span class="net-badge mono" id="netBadge" hidden>HORS LIGNE</span>
+            <div class="tool timer" title="Chronomètre d'entraînement">
+                <span class="rec"></span><span id="timer">00:00:00</span>
+                <button id="tToggle" title="Démarrer / pause">▶</button>
+                <button id="tReset" title="Remettre à zéro">↺</button>
+            </div>
+            <label class="tool case-tool" title="Enquête active"><small>DOSSIER</small><select class="caseSelect"></select></label>
+            <button class="tool sq" id="themeBtn" title="Thème papier / nuit">◐</button>
+            <button class="tool" id="kBtn" title="Palette de commandes">Ctrl K</button>
+            <button class="menu-btn" id="menuBtn" aria-label="Menu" title="Menu"><i></i><b>MENU</b></button>
+        </div>
+    </header>
+
+    <!-- =====================================================
+         MENU PLEIN ÉCRAN (personnalisable)
+         ===================================================== -->
+    <div class="menu" id="menu">
+        <div class="menu-bar">
+            <span class="mono">OSINT/HUB — NAVIGATION</span>
+            <div class="menu-bar-r">
+                <button class="mbtn" id="menuEdit">✎ Personnaliser</button>
+                <button class="menu-close" id="menuClose" aria-label="Fermer">Fermer ✕</button>
+            </div>
+        </div>
+
+        <div class="menu-main" id="menuMain">
+            <div class="menu-tiles" id="menuTiles"></div>
+            <aside class="menu-side">
+                <h4 class="mono">ACTIONS RAPIDES</h4>
+                <div class="quick-grid" id="menuQuick"></div>
+                <h4 class="mono">AUJOURD'HUI</h4>
+                <div class="today" id="menuToday"></div>
+            </aside>
+        </div>
+
+        <div class="menu-custom" id="menuCustom" hidden>
+            <div class="mc-col">
+                <h4 class="mono">MODULES — ORDRE ET AFFICHAGE</h4>
+                <p class="small">L'ordre et l'affichage s'appliquent au menu et à la barre du haut.</p>
+                <ul id="mcModules" class="mc-list"></ul>
+            </div>
+            <div class="mc-col">
+                <h4 class="mono">ACTIONS RAPIDES</h4>
+                <p class="small">Coche celles à afficher dans le menu.</p>
+                <div id="mcQuick" class="mc-checks"></div>
+                <h4 class="mono">COULEUR D'ACCENT</h4>
+                <div id="mcAccent" class="swatches"></div>
+                <h4 class="mono">AFFICHAGE</h4>
+                <div class="mc-row"><span>Thème</span><div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
+                <div class="mc-row"><span>Effets animés</span><label class="switch"><input type="checkbox" id="mcFx"><span></span></label></div>
+                <div class="mc-row"><span>Visionneuse intégrée</span><label class="switch"><input type="checkbox" id="mcViewer"><span></span></label></div>
+                <div class="mc-row"><span>Infos en direct sur les tuiles</span><label class="switch"><input type="checkbox" id="mcStats"><span></span></label></div>
+                <button class="mbtn" id="mcReset">Réinitialiser la personnalisation</button>
+            </div>
+        </div>
+        <p class="mono small menu-hint">Touches <kbd>0</kbd>–<kbd>6</kbd> · <kbd>Ctrl</kbd>+<kbd>K</kbd> · <kbd>Échap</kbd> pour fermer</p>
     </div>
-    <label class="tool case-tool" title="Enquête active"><small>DOSSIER</small><select class="caseSelect"></select></label>
-    <button class="tool sq" id="themeBtn" title="Thème papier / nuit">◐</button>
-    <button class="tool" id="kBtn" title="Palette de commandes">Ctrl K</button>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu" title="Menu"><i></i><b>MENU</b></button>
-  </div>
-</header>
 
-<!-- =====================================================
-     MENU PLEIN ÉCRAN (personnalisable)
-     ===================================================== -->
-<div class="menu" id="menu">
-  <div class="menu-bar">
-    <span class="mono">OSINT/HUB — NAVIGATION</span>
-    <div class="menu-bar-r">
-      <button class="mbtn" id="menuEdit">✎ Personnaliser</button>
-      <button class="menu-close" id="menuClose" aria-label="Fermer">Fermer ✕</button>
+    <nav class="mob-nav" id="mobNav" aria-label="Navigation principale"></nav>
+
+    <main id="main">
+
+        <!-- =====================================================
+             00 · ACCUEIL
+             ===================================================== -->
+        <section class="view" id="v-home">
+            <div class="hero">
+                <div class="hero-txt">
+                    <p class="mono label">DOSSIER N° 001 — FORMATION OSINT / GEOINT</p>
+                    <h1 class="giant"><span data-scramble>OSINT</span><br><span data-scramble>HUB</span><sup>®</sup></h1>
+                    <p class="lead">Observer ce qui est visible.<br>Prouver ce qui est vrai.<br><mark>Sources ouvertes uniquement.</mark></p>
+                    <div class="hero-cta">
+                        <a class="btn" href="#dashboard">Entrer dans le hub <span>→</span></a>
+                        <a class="btn ghost" href="#about">Lire la charte</a>
+                    </div>
+                </div>
+                <figure class="globe-box">
+                    <div class="globe-wrap">
+                        <canvas id="globe"></canvas>
+                        <div class="globe-tools">
+                            <button id="gZoomIn" title="Zoomer">+</button><button id="gZoomOut" title="Dézoomer">−</button>
+                            <button id="gHome" title="Vue d'ensemble">⌂</button><button id="gSpin" title="Rotation automatique">⟳</button>
+                        </div>
+                        <div id="globeTip" class="globe-tip mono" hidden></div>
+                    </div>
+                    <figcaption class="mono">
+                        <span>FIG. 00 — LA PLANÈTE · PROJECTION ORTHOGRAPHIQUE</span>
+                        <span id="globeRead">CENTRE —</span>
+                        <span class="muted">Glisser : tourner · Molette : zoom · Clic : sélectionner · Double-clic : ouvrir la carte</span>
+                    </figcaption>
+                    <div class="gpanel">
+                        <div class="gp-search"><input id="gSearch" placeholder="Chercher un lieu dans le monde, ou « 27.98, 86.92 »" autocomplete="off"><div id="gResults"></div></div>
+                        <div id="gSel" class="gp-sel"></div>
+                        <div class="gp-list"><span class="mono small">MES POINTS</span><ul id="gPoints"></ul></div>
+                    </div>
+                </figure>
+                <div class="hero-foot mono"><span>↓ Faire défiler</span><span id="clock">--:--:--</span><span>LYON · 45.7640 N · 4.8357 E</span></div>
+            </div>
+
+            <section class="profile-band">
+                <div class="pb-head mono"><span>FIG. 00B — COUPE TOPOGRAPHIQUE</span><span id="pbTitle">—</span><span id="pbStats"></span></div>
+                <p class="net-note pb-net" data-needs-net hidden> Connexion indisponible : les altitudes ne peuvent pas être téléchargées. Les trajets déjà consultés restent disponibles.</p>
+                <div class="pb-ctrl">
+                    <select id="pbPreset" class="sm-sel"></select>
+                    <label class="mono small">A <select id="pbA" class="sm-sel"></select></label>
+                    <button class="btn ghost sm" id="pbSwap" title="Inverser A et B">⇄</button>
+                    <label class="mono small">B <select id="pbB" class="sm-sel"></select></label>
+                    <span class="mono small muted" id="pbState"></span>
+                    <span class="mono small muted pb-hint">Astuce : sélectionne un point sur le globe puis « Départ A » / « Arrivée B ».</span>
+                </div>
+                <canvas id="profile"></canvas>
+                <p class="pb-src mono">Survol : distance, altitude et position (repérée sur le globe) · Double-clic : ouvrir la carte · Altitudes : Copernicus DEM GLO-90 (© ESA), via Open-Meteo</p>
+            </section>
+
+            <section class="block">
+                <header class="block-head"><span class="mono">§ 1</span><h2 data-scramble>Index des modules</h2><p>Six outils, une seule fenêtre. Survole une fiche, clique pour l'ouvrir.</p></header>
+                <div class="dossiers">
+                    <a class="dossier" href="#dashboard"><span class="tab mono">01 — BORD</span><div class="d-body"><h3>Tableau de bord</h3><p>Ton activité, ta série de jours, ton rang, tes prochaines étapes.</p><span class="d-foot mono">TOUCHE 1 <b>→</b></span></div></a>
+                    <a class="dossier" href="#search"><span class="tab mono">02 — RECHERCHE</span><div class="d-body"><h3>Recherche</h3><p>Un pseudo, un nom, une URL, une image : les bons outils, déjà remplis.</p><span class="d-foot mono">TOUCHE 2 <b>→</b></span></div></a>
+                    <a class="dossier" href="#map"><span class="tab mono">03 — CARTE</span><div class="d-body"><h3>Carte GEOINT</h3><p>IGN, satellite, ombres portées, mesure. Un clic, neuf outils au même endroit.</p><span class="d-foot mono">TOUCHE 3 <b>→</b></span></div></a>
+                    <a class="dossier" href="#photo"><span class="tab mono">04 — PHOTO</span><div class="d-body"><h3>Analyse photo</h3><p>Métadonnées, loupe, contraste, grille. L'image ne quitte jamais ton PC.</p><span class="d-foot mono">TOUCHE 4 <b>→</b></span></div></a>
+                    <a class="dossier" href="#training"><span class="tab mono">05 — TERRAIN</span><div class="d-body"><h3>Entraînement</h3><p>Programme en 5 niveaux, quiz intégrés, suivi GeoGuessr, mémo d'indices.</p><span class="d-foot mono">TOUCHE 5 <b>→</b></span></div></a>
+                    <a class="dossier" href="#cases"><span class="tab mono">06 — ENQUÊTES</span><div class="d-body"><h3>Enquêtes</h3><p>Des fiches, des punaises, des fils rouges. Et un rapport propre à la fin.</p><span class="d-foot mono">TOUCHE 6 <b>→</b></span></div></a>
+                </div>
+            </section>
+
+            <section class="block method" id="method">
+                <header class="block-head"><span class="mono">§ 2</span><h2 data-scramble>La méthode</h2><p>Quatre temps, toujours dans cet ordre.</p></header>
+                <div class="steps">
+                    <svg class="steps-line" preserveAspectRatio="none" viewBox="0 0 1000 10"><path id="stepsPath" d="M0 5 H1000" /></svg>
+                    <div class="step reveal"><b>A</b><h3>Indice</h3><p>Ce que tu observes. Rien de plus.</p></div>
+                    <div class="step reveal"><b>B</b><h3>Hypothèse</h3><p>Ce que tu en déduis, avec un niveau de confiance.</p></div>
+                    <div class="step reveal"><b>C</b><h3>Preuve</h3><p>Une source archivée et horodatée.</p></div>
+                    <div class="step reveal"><b>D</b><h3>Coordonnées</h3><p>Le point vérifié, sur la carte.</p></div>
+                </div>
+            </section>
+
+            <section class="block rules">
+                <header class="block-head"><span class="mono">§ 3</span><h2 data-scramble>Règles de terrain</h2><p>Non négociables.</p></header>
+                <ol class="rules-list">
+                    <li class="reveal"><b>01</b><div><h3>Sources ouvertes, rien d'autre</h3><p>Aucun piratage, aucun bornage, aucune usurpation d'identité, aucun faux profil pour tromper quelqu'un.</p></div></li>
+                    <li class="reveal"><b>02</b><div><h3>Disparition : le 17 d'abord</h3><p>Il n'existe aucun délai légal. Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</p></div></li>
+                    <li class="reveal"><b>03</b><div><h3>Jamais d'exposition</h3><p>On ne publie ni adresse, ni hypothèse, ni lieu supposé. Un adulte a le droit de partir.</p></div></li>
+                    <li class="reveal"><b>04</b><div><h3>Hygiène numérique</h3><p>Navigateur dédié, comptes neutres, archivage des preuves, suppression des données après l'exercice.</p></div></li>
+                </ol>
+            </section>
+
+            <section class="block faq">
+                <header class="block-head"><span class="mono">§ 4</span><h2 data-scramble>Questions fréquentes</h2></header>
+                <details class="reveal"><summary>Que fait exactement cet outil ?</summary><p>Il prépare des recherches dans des services publics, affiche des cartes, lit les métadonnées d'une photo, propose des exercices et t'aide à documenter une démarche. Il ne contient aucune donnée sur des personnes.</p></details>
+                <details class="reveal"><summary>Où sont stockées mes données ?</summary><p>Uniquement dans ce navigateur, sur ton ordinateur. Pas de compte, pas de cookie, pas de serveur. Les photos ne sont jamais envoyées.</p></details>
+                <details class="reveal"><summary>Puis-je aider à une recherche réelle ?</summary><p>Oui, mais uniquement dans le cadre fixé par la famille, une association comme l'ARPD ou les forces de l'ordre, en suivant leurs consignes.</p></details>
+                <details class="reveal"><summary>Comment l'installer comme une application ?</summary><p>Depuis l'adresse en ligne, dans Edge : menu … › Applications › Installer ce site en tant qu'application.</p></details>
+            </section>
+
+            <section class="final">
+                <h2 class="giant sm" data-scramble>PRÊT ?</h2>
+                <a class="btn big" href="#dashboard">Entrer dans le hub <span>→</span></a>
+                <p class="mono small muted">ou appuie sur <kbd>Entrée</kbd></p>
+            </section>
+        </section>
+
+        <!-- =====================================================
+             01 · TABLEAU DE BORD
+             ===================================================== -->
+        <section class="view" id="v-dashboard">
+            <header class="m-head">
+                <div class="m-meta mono"><span>FIG. 01</span><span>TABLEAU DE BORD</span><span id="dashDate"></span></div>
+                <h1 class="giant md" id="greet" data-scramble>Bonjour</h1>
+                <p class="lead">Ton poste d'entraînement OSINT &amp; GEOINT.</p>
+            </header>
+            <div class="wrap">
+                <div class="stats">
+                    <div class="stat"><small class="mono">TEMPS</small><b id="sTime">0</b><span>d'entraînement cumulé</span></div>
+                    <div class="stat"><small class="mono">SÉRIE</small><b id="sStreak">0</b><span>jours consécutifs</span></div>
+                    <div class="stat"><small class="mono">EXPÉRIENCE</small><b id="sXp">0</b><span id="sRank">XP</span></div>
+                    <div class="stat"><small class="mono">GEOGUESSR</small><b id="sSessions">0</b><span>sessions enregistrées</span></div>
+                    <div class="stat"><small class="mono">INDICES</small><b id="sEntries">0</b><span>fiches d'enquête</span></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><h3>Calendrier d'activité</h3><span class="mono small muted">16 DERNIÈRES SEMAINES</span></div>
+                    <div class="heat-wrap"><div class="heat-days mono"><span>L</span><span></span><span>M</span><span></span><span>V</span><span></span><span>D</span></div><div id="heat" class="heat"></div></div>
+                    <div class="heat-legend mono small muted">Moins <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Plus · <span id="heatInfo"></span></div>
+                </div>
+
+                <div class="cols">
+                    <div class="card"><div class="card-head"><h3>Prochaines étapes</h3><a class="link mono small" href="#training">PROGRAMME →</a></div><ul id="dashTasks" class="list"></ul></div>
+                    <div class="card"><div class="card-head"><h3>Dernières fiches</h3><a class="link mono small" href="#cases">TOUT VOIR →</a></div><ul id="dashEntries" class="list"></ul></div>
+                </div>
+
+                <div class="cols">
+                    <div class="card note"><div class="card-head"><h3>Réflexe du jour</h3><button class="btn ghost sm" id="nextTip">Suivant ↻</button></div><p id="tip" class="tip"></p></div>
+                    <div class="card">
+                        <div class="card-head"><h3>Ressources</h3></div>
+                        <div class="links">
+                            <a href="https://www.arpd.fr/" target="_blank" rel="noopener">ARPD — avis de recherche ↗</a>
+                            <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix — défis ↗</a>
+                            <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Bellingcat — guides ↗</a>
+                            <a href="https://web.archive.org/" target="_blank" rel="noopener">Wayback Machine ↗</a>
+                        </div>
+                        <p class="alert mono small">DISPARITION RÉELLE → APPELER LE 17, SANS ATTENDRE.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             02 · RECHERCHE
+             ===================================================== -->
+        <section class="view" id="v-search">
+            <header class="m-head">
+                <div class="m-meta mono"><span>FIG. 02</span><span>RECHERCHE</span><span>SOURCES OUVERTES</span></div>
+                <h1 class="giant md" data-scramble>Recherche</h1>
+                <p class="lead">Tape un pseudo, un nom, une URL de page ou d'image. <kbd>Entrée</kbd> ouvre l'outil surligné.</p>
+            </header>
+            <div class="wrap">
+                <div class="prompt">
+                    <span class="mono caret">&gt;</span>
+                    <input id="q" placeholder="jean_dupont69 · Jean Dupont · https://…" autocomplete="off" spellcheck="false">
+                    <span id="qType" class="badge mono off">EN ATTENTE</span>
+                </div>
+                <div class="history" id="history"></div>
+                <div class="filters">
+                    <span class="mono small muted">CIBLER :</span>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:facebook.com"><span>Facebook</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:instagram.com"><span>Instagram</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:tiktok.com"><span>TikTok</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:x.com"><span>X</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:linkedin.com"><span>LinkedIn</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:leboncoin.fr"><span>Leboncoin</span></label>
+                    <label class="toggle"><input type="checkbox" class="dork" value="site:blablacar.fr"><span>BlaBlaCar</span></label>
+                    <label class="toggle"><input type="checkbox" id="dorkExact" checked><span>"Exact"</span></label>
+                </div>
+                <details class="adv" id="advBox">
+                    <summary class="mono small">OPÉRATEURS AVANCÉS</summary>
+                    <div class="adv-grid">
+                        <label class="fl">Dans le titre (intitle:)<input class="adv-in" id="advTitle" placeholder="ex : disparition"></label>
+                        <label class="fl">Dans l'adresse (inurl:)<input class="adv-in" id="advUrl" placeholder="ex : profil"></label>
+                        <label class="fl">Type de fichier (filetype:)<select class="adv-in" id="advType"><option value="">Tous</option><option>pdf</option><option>doc</option><option>docx</option><option>xls</option><option>xlsx</option><option>ppt</option><option>csv</option><option>txt</option></select></label>
+                        <label class="fl">Site précis (site:)<input class="adv-in" id="advSite" placeholder="ex : lyon.fr"></label>
+                        <label class="fl">Exclure ces mots<input class="adv-in" id="advNot" placeholder="ex : football vente"></label>
+                        <label class="fl">Un de ces mots (OR)<input class="adv-in" id="advOr" placeholder="ex : Lyon Villeurbanne"></label>
+                        <label class="fl">Publié après (after:)<input class="adv-in" type="date" id="advAfter"></label>
+                        <label class="fl">Publié avant (before:)<input class="adv-in" type="date" id="advBefore"></label>
+                    </div>
+                    <p class="small muted">Les opérateurs s'ajoutent à la requête Google, Bing et DuckDuckGo. « after: » et « before: » sont propres à Google. <button class="link-btn" id="advReset">Tout effacer</button></p>
+                </details>
+                <p class="mono small dork-line"><span class="muted">REQUÊTE :</span> <code id="dorkPreview">—</code> <button class="btn ghost sm" id="copyDork">Copier</button></p>
+                <div id="toolGroups"></div>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             03 · CARTE
+             ===================================================== -->
+        <section class="view" id="v-map">
+            <div class="map-wrap">
+                <div id="leaflet"></div>
+                <div class="map-reticle" aria-hidden="true"></div>
+                <div class="cmp-handle" id="cmpHandle" hidden><span class="mono">AVANT</span><i></i><span class="mono">APRÈS</span></div>
+                <div class="map-search panel">
+                    <input id="geoQ" placeholder="Adresse, lieu ou « 45.76, 4.83 »" autocomplete="off">
+                    <div id="geoResults"></div>
+                </div>
+                <aside class="map-panel panel">
+                    <button class="mp-toggle mono" id="mapPanelToggle" aria-expanded="true">Réduire ▾</button>
+                    <div class="m-meta mono"><span>FIG. 03</span><span>CARTE GEOINT</span></div>
+                    <h2 data-scramble>Point</h2>
+                    <p class="net-note" data-needs-net hidden> Connexion indisponible : les fonds de carte, la recherche d'adresse et les outils externes sont indisponibles. Les points de tes fiches restent consultables dans Enquêtes.</p>
+                    <p class="mono small muted" id="mapHint">Clique sur la carte pour placer un point.</p>
+                    <div class="coords"><code id="coords">—</code><button class="btn ghost sm" id="copyCoords" title="Copier">Copier</button></div>
+
+                    <h3 class="mono">☀ SOLEIL &amp; OMBRES</h3>
+                    <div class="row"><input type="datetime-local" id="sunDate"><button class="btn ghost sm" id="sunNow">Maint.</button></div>
+                    <div id="sunInfo" class="small">—</div>
+
+                    <h3 class="mono">↗ OUVRIR CE POINT DANS</h3>
+                    <div id="pointTools" class="links"><span class="muted small">Place d'abord un point.</span></div>
+
+                    <h3 class="mono">⟷ MESURE</h3>
+                    <div class="row"><button class="btn ghost sm" id="measureBtn">Mesurer une distance</button><span id="measureOut" class="mono small"></span></div>
+
+                    <h3 class="mono">◯ RAYON AUTOUR DU POINT</h3>
+                    <div class="row">
+                        <input id="radKm" type="number" min="0.05" step="0.1" value="1" aria-label="Rayon en kilomètres"><span class="mono small">km</span>
+                        <button class="btn ghost sm" id="radAdd">Tracer</button><button class="btn ghost sm" id="radClear" title="Effacer les cercles">✕</button>
+                    </div>
+                    <p class="mono small muted" id="radOut">Ex. : « à moins de 2 km de la gare ».</p>
+
+                    <h3 class="mono">◎ CALQUES OVERPASS (OPENSTREETMAP)</h3>
+                    <div class="row"><select id="ovPreset" aria-label="Type d'objet à afficher"></select></div>
+                    <div class="row" id="ovCustomRow" hidden><input id="ovCustom" placeholder="clé=valeur (ex. shop=bakery)" aria-label="Filtre Overpass personnalisé"></div>
+                    <div class="row"><button class="btn ghost sm" id="ovRun">Afficher dans la vue</button><button class="btn ghost sm" id="ovClear" title="Effacer le calque">✕</button></div>
+                    <p class="mono small muted" id="ovOut">Affiche les objets de la zone visible (zoom 13 minimum).</p>
+
+                    <h3 class="mono">⇆ AVANT / APRÈS</h3>
+                    <div class="row"><select id="cmpLayer" aria-label="Photo aérienne ancienne"><option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965">Photos aériennes 1950-1965 (IGN)</option></select></div>
+                    <div class="row"><button class="btn ghost sm" id="cmpBtn">Comparer avec aujourd'hui</button></div>
+                    <p class="mono small muted" id="cmpOut">Glisse la barre verticale : ancienne photo à gauche, carte actuelle à droite.</p>
+
+                    <h3 class="mono">📌 CONSIGNER</h3>
+                    <button class="btn wide" id="pinToCase">Ajouter le point à l'enquête</button>
+                </aside>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             04 · PHOTO
+             ===================================================== -->
+        <section class="view" id="v-photo">
+            <header class="m-head">
+                <div class="m-meta mono"><span>FIG. 04</span><span>ANALYSE PHOTO</span><span>TRAITEMENT 100 % LOCAL</span></div>
+                <h1 class="giant md" data-scramble>Photo</h1>
+                <p class="lead">L'image reste sur ton PC. Glisse-la n'importe où sur la page, ou colle-la avec <kbd>Ctrl</kbd>+<kbd>V</kbd>.</p>
+            </header>
+            <div class="wrap">
+                <p class="net-note" data-needs-net hidden> Connexion indisponible : la photo s'affiche et les réglages fonctionnent, mais la lecture des métadonnées (EXIF) nécessite une connexion au premier chargement.</p>
+                <label id="drop" class="drop">
+                    <input type="file" id="file" accept="image/*" hidden>
+                    <span class="drop-ico mono">[ + ]</span>
+                    <b>Déposer une image</b>
+                    <span class="mono small muted">ou cliquer pour parcourir</span>
+                </label>
+                <div class="photo-grid">
+                    <div>
+                        <div class="photo-view" id="photoView">
+                            <div class="img-wrap" id="imgWrap"><img id="preview" alt=""><div class="grid-ov" id="gridOv"></div></div>
+                            <span class="mono muted" id="noImg">AUCUNE IMAGE</span>
+                        </div>
+                        <p class="mono small muted">Clic sur l'image = loupe ×2,6 · déplace la souris pour explorer.</p>
+                        <div class="card">
+                            <div class="card-head"><h3>Réglages de lecture</h3><button class="btn ghost sm" id="fxReset">Réinitialiser</button></div>
+                            <div class="sliders">
+                                <label>Contraste <input type="range" id="fxC" min="50" max="300" value="100"><output>100</output></label>
+                                <label>Luminosité <input type="range" id="fxB" min="30" max="250" value="100"><output>100</output></label>
+                                <label>Saturation <input type="range" id="fxS" min="0" max="300" value="100"><output>100</output></label>
+                            </div>
+                            <div class="row wrap-row">
+                                <label class="toggle"><input type="checkbox" id="fxI"><span>Inverser</span></label>
+                                <label class="toggle"><input type="checkbox" id="fxG"><span>Niveaux de gris</span></label>
+                                <label class="toggle"><input type="checkbox" id="gridT"><span>Grille 3×3</span></label>
+                                <label class="toggle"><input type="checkbox" id="gridF"><span>Grille fine</span></label>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-head"><h3>Recherche inversée</h3></div>
+                            <p class="small muted">1. Copie l'image · 2. ouvre un outil · 3. colle-la (Ctrl+V).</p>
+                            <div class="links">
+                                <button id="copyImg">Copier l'image</button>
+                                <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens ↗</a>
+                                <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex ↗</a>
+                                <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye ↗</a>
+                                <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing Visual ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-head"><h3>Métadonnées (EXIF)</h3></div>
+                            <table id="exif" class="kv"><tr><td class="muted">Aucune image chargée</td></tr></table>
+                            <button class="btn wide" id="exifToMap" hidden>Voir la position GPS sur la carte →</button>
+                        </div>
+                        <div class="card">
+                            <div class="card-head"><h3>Grille d'observation</h3></div>
+                            <div id="clueGrid"></div>
+                            <button class="btn wide" id="photoToCase">Créer une fiche avec cette photo →</button>
+                            <button class="btn ghost wide" id="cluesToCase">Envoyer seulement les observations</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             05 · ENTRAÎNEMENT
+             ===================================================== -->
+        <section class="view" id="v-training">
+            <header class="m-head">
+                <div class="m-meta mono"><span>FIG. 05</span><span>ENTRAÎNEMENT</span><span>RÉGULARITÉ &gt; INTENSITÉ</span></div>
+                <h1 class="giant md" data-scramble>Terrain</h1>
+                <p class="lead">Un programme en cinq niveaux, des exercices intégrés, ton suivi GeoGuessr et ton mémo d'indices.</p>
+            </header>
+            <div class="wrap">
+                <div class="rank">
+                    <div class="rank-badge"><span id="rankNum">I</span><small class="mono">RANG</small></div>
+                    <div class="rank-info">
+                        <small class="mono muted">RANG ACTUEL</small>
+                        <h2 id="rankName">Observateur</h2>
+                        <div class="xpbar"><div id="xpFill"></div></div>
+                        <p class="mono small" id="xpText"></p>
+                    </div>
+                    <div class="rank-daily">
+                        <button class="daily-btn" id="dailyQuizBtn"><small class="mono">QUIZ DU JOUR</small><b id="dailyQuizName">—</b><span class="mono small" id="dailyQuizState"></span></button>
+                        <button class="daily-btn" id="dailyGgBtn"><small class="mono">DÉFI GEOGUESSR DU JOUR</small><b id="dailyGgName">—</b><span class="mono small" id="dailyGgState"></span></button>
+                    </div>
+                </div>
+
+                <div class="seg mono big-seg" id="trainTabs">
+                    <button class="on" data-ttab="program">PROGRAMME</button>
+                    <button data-ttab="drills">EXERCICES</button>
+                    <button data-ttab="gg">GEOGUESSR</button>
+                    <button data-ttab="memo">MÉMO INDICES</button>
+                </div>
+
+                <!-- Programme -->
+                <div class="tpane" data-tpane="program">
+                    <div id="program" class="program"></div>
+                    <div class="cols">
+                        <div class="card"><div class="card-head"><h3>Badges</h3><span id="badgeCount" class="mono small"></span></div><div id="badges" class="badges"></div></div>
+                        <div class="card">
+                            <div class="card-head"><h3>Mes défis perso</h3><span id="taskPct" class="mono small"></span></div>
+                            <div class="progress"><div id="taskBar"></div></div>
+                            <div class="row"><input id="taskInput" placeholder="Nouveau défi…"><button class="btn" id="taskAdd">Ajouter</button></div>
+                            <ul id="taskList" class="list"></ul>
+                            <h4 class="mono small">RESSOURCES</h4>
+                            <div class="links">
+                                <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix (Sofia Santos) ↗</a>
+                                <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Guides Bellingcat ↗</a>
+                                <a href="https://www.geoguessr.com/vgp/3331" target="_blank" rel="noopener">Seterra — régions ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercices -->
+                <div class="tpane" data-tpane="drills" hidden>
+                    <p class="net-note" data-needs-net hidden> Connexion indisponible : les quiz Départements, Indices et Outils fonctionnent. « Ombres & heure » et les exercices photo nécessitent une connexion.</p>
+                    <div class="card play" id="peCard">
+                        <div class="card-head"><h3>Exercice photo : géolocaliser une vraie image</h3><span class="mono small muted">PHOTOS WIKIMEDIA COMMONS · LIBRES DE DROITS</span></div>
+                        <div id="peSetup" class="play-setup">
+                            <p class="small">Une vraie photo géolocalisée, prise par un photographe bénévole, s'affiche sans son titre. Observe, place ta réponse sur la carte, puis découvre le lieu exact, l'auteur et la licence. 5 photos, 5 000 points maximum par photo.</p>
+                            <div class="row wrap-row">
+                                <label class="fl inline">Zone <select id="peZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
+                                <button class="btn" id="peStart">Lancer l'exercice →</button>
+                            </div>
+                        </div>
+                        <div id="peGame" class="play-game" hidden>
+                            <div class="pg-head mono"><span id="peRound">PHOTO 1/5</span><span id="peScore">0 PTS</span><button class="btn ghost sm" id="peSkip">Autre photo</button><button class="btn ghost sm" id="peQuit">Quitter</button></div>
+                            <div class="pg-grid">
+                                <div class="pe-img" id="peImgBox"><img id="peImg" alt="Photo à géolocaliser"><span class="mono small" id="peLoad">Chargement d'une photo…</span></div>
+                                <div class="pg-side">
+                                    <div id="peMap" class="pg-map"></div>
+                                    <div id="peResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
+                                    <button class="btn wide" id="peGuess" disabled>Valider ma réponse</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="quizList" class="quiz-list"></div>
+                    <div id="quizBox" class="card quiz" hidden></div>
+                </div>
+
+                <!-- GeoGuessr -->
+                <div class="tpane" data-tpane="gg" hidden>
+                    <div class="card play">
+                        <div class="card-head"><h3>Partie intégrée</h3><span class="mono small muted">STREET VIEW DANS LE HUB · EXPÉRIMENTAL</span></div>
+                        <div id="playSetup" class="play-setup">
+                            <p class="small">Le même principe que GeoGuessr, sans quitter le site : une image Street View s'affiche, tu cliques sur la carte là où tu penses être. 5 manches, 5 000 points maximum par manche.</p>
+                            <div class="row wrap-row">
+                                <label class="fl inline">Zone <select id="playZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
+                                <label class="fl inline">Mode <select id="playMode"><option value="move">Move (déplacement libre)</option><option value="still">Figé (image fixe)</option></select></label>
+                                <button class="btn" id="playStart">Lancer une partie →</button>
+                            </div>
+                        </div>
+                        <div id="playGame" class="play-game" hidden>
+                            <div class="pg-head mono"><span id="pgRound">MANCHE 1/5</span><span id="pgScore">0 PTS</span><button class="btn ghost sm" id="pgSkip" title="Si l'image reste noire ou vide">Lieu sans image ? Passer</button><button class="btn ghost sm" id="pgQuit">Quitter</button></div>
+                            <div class="pg-grid">
+                                <div class="pg-sv"><iframe id="pgFrame" title="Street View" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><div class="pg-mask mono">ADRESSE MASQUÉE</div><div class="pg-still" id="pgStill" hidden></div></div>
+                                <div class="pg-side">
+                                    <div id="pgMap" class="pg-map"></div>
+                                    <div id="pgResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
+                                    <button class="btn wide" id="pgGuess" disabled>Valider ma réponse</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cols">
+                        <div>
+                            <div class="card"><div class="card-head"><h3>Défi du jour</h3><span class="mono small muted" id="ggDailyDate"></span></div><div id="ggDaily"></div></div>
+                            <div class="card">
+                                <div class="card-head"><h3>Mes cartes</h3><button class="btn ghost sm" id="ggAddMap">+ Carte</button></div>
+                                <div id="ggLinks" class="gg-links"></div>
+                                <p class="small muted">Gratuit et sans compte pour s'échauffer : <a class="link" href="https://www.worldguessr.com/map/france" target="_blank" rel="noopener">WorldGuessr France ↗</a></p>
+                                <p class="small muted">GeoGuessr ne peut pas s'afficher à l'intérieur du hub : le site l'interdit, et la connexion à ton compte ne passerait pas. <button class="link-btn" id="ggTryEmbed">Vérifier par toi-même dans la visionneuse</button></p>
+                            </div>
+                            <div class="card">
+                                <div class="card-head"><h3>Nouvelle session</h3></div>
+                                <div class="form-grid">
+                                    <label class="fl">Carte<select id="ggMap"></select></label>
+                                    <label class="fl">Mode<select id="ggMode"><option>Move</option><option>No Move</option><option>NMPZ</option></select></label>
+                                    <label class="fl">Score<input id="ggScore" type="number" min="0" max="25000" placeholder="0 – 25 000"></label>
+                                    <label class="fl">Durée (min)<input id="ggTime" type="number" min="0" placeholder="facultatif"></label>
+                                </div>
+                                <label class="fl">Ce qui m'a aidé / trompé<textarea id="ggNote" placeholder="ex : confondu Drôme et Ardèche, bornes jaunes repérées…"></textarea></label>
+                                <button class="btn wide" id="ggAdd">Enregistrer la session</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="card">
+                                <div class="card-head">
+                                    <h3>Statistiques</h3>
+                                    <div class="row filt"><select id="ggFMap" class="sm-sel"></select><select id="ggFMode" class="sm-sel"><option value="">Tous modes</option><option>Move</option><option>No Move</option><option>NMPZ</option></select></div>
+                                </div>
+                                <div class="kpis" id="ggKpis"></div>
+                                <div class="chart-box"><canvas id="ggChart"></canvas><span id="ggAvg" class="mono small muted"></span></div>
+                                <label class="fl inline">Objectif de score <input id="ggGoal" type="number" min="0" max="25000" step="500"></label>
+                            </div>
+                            <div class="card"><div class="card-head"><h3>Analyse de tes parties intégrées</h3><span class="mono small muted">STREET VIEW + EXERCICES PHOTO</span></div><div id="playStats"></div></div>
+                            <div class="card"><div class="card-head"><h3>Historique</h3><span class="mono small muted" id="ggCount"></span></div><ul id="ggList" class="list sessions"></ul></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mémo -->
+                <div class="tpane" data-tpane="memo" hidden>
+                    <div class="cols cols-memo">
+                        <div>
+                            <div class="card">
+                                <div class="card-head"><h3>Nouvel indice</h3></div>
+                                <label class="fl">Catégorie<select id="memoCat"></select></label>
+                                <label class="fl">Zone (pays, région, ville…)<input id="memoZone" placeholder="ex : Drôme, Bretagne, Lyon 7e"></label>
+                                <label class="fl">Indice<textarea id="memoText" placeholder="Ce que tu as remarqué, de façon vérifiable"></textarea></label>
+                                <label class="fl">Source (facultatif)<input id="memoSrc" placeholder="https://…"></label>
+                                <button class="btn wide" id="memoAdd">Ajouter au mémo</button>
+                            </div>
+                            <div class="card">
+                                <div class="card-head"><h3>Révision espacée</h3><button class="btn sm" id="memoReview">Réviser</button></div>
+                                <div id="memoReviewBox" class="flash"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="memo-tools"><input id="memoQ" placeholder="Rechercher dans le mémo…"><div id="memoChips" class="chips"></div></div>
+                            <div id="memoGrid" class="memo-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             06 · ENQUÊTES
+             ===================================================== -->
+        <section class="view" id="v-cases">
+            <header class="m-head">
+                <div class="m-meta mono"><span>FIG. 06</span><span>ENQUÊTES</span><span id="caseMeta"></span></div>
+                <h1 class="giant md" data-scramble>Enquêtes</h1>
+                <p class="lead">Indice → Hypothèse → Preuve → Coordonnées.</p>
+            </header>
+            <div class="wrap">
+                <div class="case-bar card">
+                    <div class="cb-top">
+                        <div><small class="mono muted">DOSSIER ACTIF</small><h2 id="caseTitle">—</h2></div>
+                        <div class="row">
+                            <button class="btn ghost sm" id="renameCase">Renommer</button>
+                            <button class="btn danger sm" id="delCase">Supprimer</button>
+                        </div>
+                    </div>
+                    <div class="case-chips" id="caseChips"></div>
+                    <div class="cs-wrap"><input id="caseSearch" placeholder="Rechercher dans toutes les fiches de tous les dossiers…" autocomplete="off" aria-label="Rechercher dans les fiches"><div id="caseResults" class="cs-results"></div></div>
+                    <div class="row cb-new">
+                        <input id="newCase" placeholder="Nom d'un nouveau dossier (ex : Gralhix n° 12)">
+                        <button class="btn" id="addCase">Créer le dossier</button>
+                        <select class="caseSelect" hidden></select>
+                    </div>
+                </div>
+
+                <div class="cols cols-cases">
+                    <div class="card" id="formCard">
+                        <div class="card-head"><h3 id="formTitle">Nouvelle fiche</h3></div>
+                        <label class="fl">Indice observé<textarea id="rClue"></textarea></label>
+                        <label class="fl">Hypothèse<textarea id="rHyp"></textarea></label>
+                        <label class="fl">Preuve (source, lien archivé, capture)<textarea id="rProof"></textarea></label>
+                        <label class="fl">Coordonnées GPS<input id="rGps" placeholder="45.7640, 4.8357"></label>
+                        <label class="fl">Confiance <span id="rConfLbl" class="conf"></span><input id="rConf" type="range" min="1" max="5" value="3"></label>
+                        <div class="fl">Images <span class="muted">(bouton, glisser-déposer ou Ctrl+V)</span><div class="thumbs" id="rImgs"></div></div>
+                        <button class="btn wide" id="rAdd">Ajouter la fiche</button>
+                        <button class="btn ghost wide" id="rCancel" hidden>Annuler la modification</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-head">
+                            <div class="seg mono">
+                                <button class="on" data-mode="board">TABLEAU</button>
+                                <button data-mode="timeline">CHRONOLOGIE</button>
+                            </div>
+                            <span id="rCount" class="mono small muted"></span>
+                        </div>
+                        <div class="row wrap-row">
+                            <button class="btn ghost sm" id="linkMode" title="Clique une fiche puis une autre pour les relier">Relier des fiches</button>
+                            <button class="btn ghost sm" id="tidyBoard">Ranger</button>
+                            <span class="sep"></span>
+                            <button class="btn ghost sm" id="exportPdf">Rapport PDF</button>
+                            <button class="btn ghost sm" id="exportMd">Rapport .md</button>
+                            <button class="btn ghost sm" id="exportJson">Sauvegarde .json</button>
+                            <label class="btn ghost sm">Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
+                        </div>
+                        <p class="mono small muted" id="boardHint">Glisser : déplacer · ✎ ou double-clic : modifier · clic sur le GPS : voir sur la carte · clic sur un fil : le supprimer.</p>
+                        <div class="board-scroll" id="boardScroll">
+                            <div class="board" id="board"><svg id="strings"></svg></div>
+                        </div>
+                        <ol id="rList" class="timeline" hidden></ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             À PROPOS · CONDITIONS · CONFIDENTIALITÉ · PARAMÈTRES
+             ===================================================== -->
+        <section class="view" id="v-about">
+            <header class="m-head">
+                <div class="m-meta mono"><span>ANNEXE</span><span>À PROPOS</span><span id="aboutVer"></span></div>
+                <h1 class="giant md" data-scramble>À propos</h1>
+            </header>
+            <div class="wrap">
+                <div class="seg mono big-seg" id="aboutTabs">
+                    <button class="on" data-tab="info">PROJET</button>
+                    <button data-tab="terms">CONDITIONS</button>
+                    <button data-tab="privacy">CONFIDENTIALITÉ</button>
+                    <button data-tab="settings">PARAMÈTRES</button>
+                </div>
+
+                <div class="tab-pane" data-pane="info">
+                    <div class="cols">
+                        <div class="card doc">
+                            <h2>Le projet</h2>
+                            <p>OSINT Hub est un carnet de terrain numérique pour s'entraîner à la recherche en sources ouvertes et à la géolocalisation d'images. Il réunit les outils utiles dans une seule fenêtre et impose une méthode : <b>indice, hypothèse, preuve, coordonnées</b>.</p>
+                            <p>C'est un projet personnel, gratuit, sans serveur ni compte. Il n'est affilié à aucun service ni à aucune association cités.</p>
+                            <p class="links"><a id="repoLink" href="#" target="_blank" rel="noopener">Code source sur GitHub ↗</a></p>
+                        </div>
+                        <div class="card doc">
+                            <h2>Construit avec</h2>
+                            <table class="kv">
+                                <tr><td>Carte</td><td>Leaflet · IGN Géoplateforme · OpenStreetMap · Esri</td></tr>
+                                <tr><td>Soleil</td><td>SunCalc</td></tr>
+                                <tr><td>Métadonnées</td><td>exifr</td></tr>
+                                <tr><td>Adresses</td><td>Nominatim (OpenStreetMap)</td></tr>
+                                <tr><td>Objets sur la carte</td><td>Overpass API (OpenStreetMap)</td></tr>
+                                <tr><td>Photos d'exercice</td><td>Wikimedia Commons (licences libres)</td></tr>
+                                <tr><td>Altitudes</td><td>Open-Meteo · Copernicus DEM</td></tr>
+                                <tr><td>Polices</td><td>Archivo · JetBrains Mono</td></tr>
+                                <tr><td>Licence</td><td>MIT</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane doc card" data-pane="terms" hidden><div id="termsDoc"></div></div>
+                <div class="tab-pane doc card" data-pane="privacy" hidden><div id="privacyDoc"></div></div>
+                <div class="tab-pane" data-pane="settings" hidden>
+                    <div class="cols">
+                        <div class="card">
+                            <div class="card-head"><h3>Affichage</h3></div>
+                            <div class="setting">
+                                <div><b>Thème</b><p class="small muted">Papier (clair) ou nuit (sombre).</p></div>
+                                <div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div>
+                            </div>
+                            <div class="setting">
+                                <div><b>Effets animés</b><p class="small muted">Courbes de niveau, globe, réticule, transitions.</p></div>
+                                <label class="switch"><input type="checkbox" id="fxToggle"><span></span></label>
+                            </div>
+                            <div class="setting">
+                                <div><b>Visionneuse intégrée</b><p class="small muted">Ouvre Google Maps, la vue satellite, Street View et OpenStreetMap dans un panneau du hub. Les sites qui l'interdisent s'ouvrent dans un onglet.</p></div>
+                                <label class="switch"><input type="checkbox" id="viewerToggle"><span></span></label>
+                            </div>
+                            <div class="setting">
+                                <div><b>Menu, couleur, actions rapides</b><p class="small muted">Ordre des modules, modules masqués, couleur d'accent.</p></div>
+                                <button class="btn ghost sm" id="setCustom">Personnaliser</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-head"><h3>Données</h3></div>
+                            <div class="setting"><div><b>Sauvegarder</b><p class="small muted">Télécharge toutes tes données, images des fiches comprises (.json).</p></div><button class="btn ghost sm" id="setExport">Sauvegarder</button></div>
+                            <div class="setting col"><div><b>Sauvegarde automatique dans un dossier</b></div><div id="backupStatus"></div></div>
+                            <div class="setting">
+                                <div><b>Rappel de sauvegarde</b><p class="small muted">Un bandeau te le rappelle si tu n'as pas sauvegardé depuis…</p></div>
+                                <select id="backupEvery" class="sm-sel"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option><option value="0">Jamais</option></select>
+                            </div>
+                            <div class="setting"><div><b>Visite guidée</b><p class="small muted">Présentation de l'interface en 7 étapes.</p></div><button class="btn ghost sm" id="setTour">Lancer</button></div>
+                            <div class="setting"><div><b>Revoir la charte</b><p class="small muted">Réaffiche la fenêtre d'accord.</p></div><button class="btn ghost sm" id="setCharter">Afficher</button></div>
+                            <div class="setting"><div><b>Effacer toutes les données</b><p class="small muted">Enquêtes, progression, scores, mémo, réglages. Irréversible.</p></div><button class="btn danger sm" id="setWipe">Effacer</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="foot mono">
+            <span>OSINT/HUB <b id="footVer"></b></span>
+            <span>Sources ouvertes uniquement · Disparition : 17</span>
+            <span><a href="#about" data-tab-link="terms">Conditions</a> · <a href="#about" data-tab-link="privacy">Confidentialité</a> · <a id="footRepo" href="#" target="_blank" rel="noopener">GitHub</a></span>
+        </footer>
+
+    </main>
+
+    <!-- Charte au premier lancement -->
+    <div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-label="Charte d'utilisation">
+        <div class="gate-box">
+            <p class="mono label">AVANT DE COMMENCER — CHARTE D'UTILISATION</p>
+            <h2>Quatre règles.</h2>
+            <ol class="gate-rules">
+                <li><b>Sources ouvertes uniquement.</b> Aucun piratage, aucune usurpation d'identité, aucun faux profil pour tromper.</li>
+                <li><b>Jamais pour surveiller ou exposer</b> une personne : pas de traque, pas de harcèlement, pas de divulgation d'informations.</li>
+                <li><b>Disparition réelle : le 17 d'abord.</b> Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</li>
+                <li><b>Tes données restent sur ton PC.</b> Tu es responsable de ce que tu y notes ; supprime-le après l'exercice.</li>
+            </ol>
+            <details class="gate-full"><summary class="mono small">LIRE LES CONDITIONS COMPLÈTES</summary><div id="gateTerms" class="doc"></div></details>
+            <label class="gate-check"><input type="checkbox" id="gateOk"> J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité.</label>
+            <button class="btn big wide" id="gateGo" disabled>Accepter et entrer →</button>
+        </div>
     </div>
-  </div>
 
-  <div class="menu-main" id="menuMain">
-    <div class="menu-tiles" id="menuTiles"></div>
-    <aside class="menu-side">
-      <h4 class="mono">ACTIONS RAPIDES</h4>
-      <div class="quick-grid" id="menuQuick"></div>
-      <h4 class="mono">AUJOURD'HUI</h4>
-      <div class="today" id="menuToday"></div>
+    <!-- Palette de commandes -->
+    <div id="palette" class="palette" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+        <div class="palette-box">
+            <div class="palette-in"><span class="mono">&gt;</span><input id="paletteQ" placeholder="Commande ou outil…" autocomplete="off"></div>
+            <ul id="paletteList"></ul>
+            <p class="mono small muted palette-foot">↑↓ naviguer · Entrée valider · Échap fermer</p>
+        </div>
+    </div>
+
+    <!-- Visionneuse intégrée -->
+    <aside id="viewer" class="viewer" hidden>
+        <div class="vw-resize" id="vwResize" title="Glisser pour redimensionner"></div>
+        <div class="vw-bar">
+            <span class="mono vw-lbl">VISIONNEUSE</span>
+            <div class="vw-tabs" id="vwTabs"></div>
+            <div class="vw-act">
+                <button id="vwExt" title="Ouvrir dans un onglet du navigateur">↗</button>
+                <button id="vwFull" title="Agrandir / réduire">⤢</button>
+                <button id="vwClose" title="Fermer la visionneuse">✕</button>
+            </div>
+        </div>
+        <p class="vw-note mono" id="vwNote"></p>
+        <div class="vw-body" id="vwBody"></div>
     </aside>
-  </div>
 
-  <div class="menu-custom" id="menuCustom" hidden>
-    <div class="mc-col">
-      <h4 class="mono">MODULES — ORDRE ET AFFICHAGE</h4>
-      <p class="small">L'ordre et l'affichage s'appliquent au menu et à la barre du haut.</p>
-      <ul id="mcModules" class="mc-list"></ul>
-    </div>
-    <div class="mc-col">
-      <h4 class="mono">ACTIONS RAPIDES</h4>
-      <p class="small">Coche celles à afficher dans le menu.</p>
-      <div id="mcQuick" class="mc-checks"></div>
-      <h4 class="mono">COULEUR D'ACCENT</h4>
-      <div id="mcAccent" class="swatches"></div>
-      <h4 class="mono">AFFICHAGE</h4>
-      <div class="mc-row"><span>Thème</span><div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
-      <div class="mc-row"><span>Effets animés</span><label class="switch"><input type="checkbox" id="mcFx"><span></span></label></div>
-      <div class="mc-row"><span>Visionneuse intégrée</span><label class="switch"><input type="checkbox" id="mcViewer"><span></span></label></div>
-      <div class="mc-row"><span>Infos en direct sur les tuiles</span><label class="switch"><input type="checkbox" id="mcStats"><span></span></label></div>
-      <button class="mbtn" id="mcReset">Réinitialiser la personnalisation</button>
-    </div>
-  </div>
-  <p class="mono small menu-hint">Touches <kbd>0</kbd>–<kbd>6</kbd> · <kbd>Ctrl</kbd>+<kbd>K</kbd> · <kbd>Échap</kbd> pour fermer</p>
-</div>
+    <!-- Transition entre pages -->
+    <div id="scan" aria-hidden="true"><span class="mono" id="scanLbl"></span></div>
+    <div id="toast" class="mono" role="status" aria-live="polite"></div>
 
-<nav class="mob-nav" id="mobNav" aria-label="Navigation principale"></nav>
-
-<main id="main">
-
-<!-- =====================================================
-     00 · ACCUEIL
-     ===================================================== -->
-<section class="view" id="v-home">
-  <div class="hero">
-    <div class="hero-txt">
-      <p class="mono label">DOSSIER N° 001 — FORMATION OSINT / GEOINT</p>
-      <h1 class="giant"><span data-scramble>OSINT</span><br><span data-scramble>HUB</span><sup>®</sup></h1>
-      <p class="lead">Observer ce qui est visible.<br>Prouver ce qui est vrai.<br><mark>Sources ouvertes uniquement.</mark></p>
-      <div class="hero-cta">
-        <a class="btn" href="#dashboard">Entrer dans le hub <span>→</span></a>
-        <a class="btn ghost" href="#about">Lire la charte</a>
-      </div>
-    </div>
-    <figure class="globe-box">
-      <div class="globe-wrap">
-        <canvas id="globe"></canvas>
-        <div class="globe-tools">
-          <button id="gZoomIn" title="Zoomer">+</button><button id="gZoomOut" title="Dézoomer">−</button>
-          <button id="gHome" title="Vue d'ensemble">⌂</button><button id="gSpin" title="Rotation automatique">⟳</button>
-        </div>
-        <div id="globeTip" class="globe-tip mono" hidden></div>
-      </div>
-      <figcaption class="mono">
-        <span>FIG. 00 — LA PLANÈTE · PROJECTION ORTHOGRAPHIQUE</span>
-        <span id="globeRead">CENTRE —</span>
-        <span class="muted">Glisser : tourner · Molette : zoom · Clic : sélectionner · Double-clic : ouvrir la carte</span>
-      </figcaption>
-      <div class="gpanel">
-        <div class="gp-search"><input id="gSearch" placeholder="Chercher un lieu dans le monde, ou « 27.98, 86.92 »" autocomplete="off"><div id="gResults"></div></div>
-        <div id="gSel" class="gp-sel"></div>
-        <div class="gp-list"><span class="mono small">MES POINTS</span><ul id="gPoints"></ul></div>
-      </div>
-    </figure>
-    <div class="hero-foot mono"><span>↓ Faire défiler</span><span id="clock">--:--:--</span><span>LYON · 45.7640 N · 4.8357 E</span></div>
-  </div>
-
-  <section class="profile-band">
-    <div class="pb-head mono"><span>FIG. 00B — COUPE TOPOGRAPHIQUE</span><span id="pbTitle">—</span><span id="pbStats"></span></div>
-    <p class="net-note pb-net" data-needs-net hidden> Connexion indisponible : les altitudes ne peuvent pas être téléchargées. Les trajets déjà consultés restent disponibles.</p>
-    <div class="pb-ctrl">
-      <select id="pbPreset" class="sm-sel"></select>
-      <label class="mono small">A <select id="pbA" class="sm-sel"></select></label>
-      <button class="btn ghost sm" id="pbSwap" title="Inverser A et B">⇄</button>
-      <label class="mono small">B <select id="pbB" class="sm-sel"></select></label>
-      <span class="mono small muted" id="pbState"></span>
-      <span class="mono small muted pb-hint">Astuce : sélectionne un point sur le globe puis « Départ A » / « Arrivée B ».</span>
-    </div>
-    <canvas id="profile"></canvas>
-    <p class="pb-src mono">Survol : distance, altitude et position (repérée sur le globe) · Double-clic : ouvrir la carte · Altitudes : Copernicus DEM GLO-90 (© ESA), via Open-Meteo</p>
-  </section>
-
-  <section class="block">
-    <header class="block-head"><span class="mono">§ 1</span><h2 data-scramble>Index des modules</h2><p>Six outils, une seule fenêtre. Survole une fiche, clique pour l'ouvrir.</p></header>
-    <div class="dossiers">
-      <a class="dossier" href="#dashboard"><span class="tab mono">01 — BORD</span><div class="d-body"><h3>Tableau de bord</h3><p>Ton activité, ta série de jours, ton rang, tes prochaines étapes.</p><span class="d-foot mono">TOUCHE 1 <b>→</b></span></div></a>
-      <a class="dossier" href="#search"><span class="tab mono">02 — RECHERCHE</span><div class="d-body"><h3>Recherche</h3><p>Un pseudo, un nom, une URL, une image : les bons outils, déjà remplis.</p><span class="d-foot mono">TOUCHE 2 <b>→</b></span></div></a>
-      <a class="dossier" href="#map"><span class="tab mono">03 — CARTE</span><div class="d-body"><h3>Carte GEOINT</h3><p>IGN, satellite, ombres portées, mesure. Un clic, neuf outils au même endroit.</p><span class="d-foot mono">TOUCHE 3 <b>→</b></span></div></a>
-      <a class="dossier" href="#photo"><span class="tab mono">04 — PHOTO</span><div class="d-body"><h3>Analyse photo</h3><p>Métadonnées, loupe, contraste, grille. L'image ne quitte jamais ton PC.</p><span class="d-foot mono">TOUCHE 4 <b>→</b></span></div></a>
-      <a class="dossier" href="#training"><span class="tab mono">05 — TERRAIN</span><div class="d-body"><h3>Entraînement</h3><p>Programme en 5 niveaux, quiz intégrés, suivi GeoGuessr, mémo d'indices.</p><span class="d-foot mono">TOUCHE 5 <b>→</b></span></div></a>
-      <a class="dossier" href="#cases"><span class="tab mono">06 — ENQUÊTES</span><div class="d-body"><h3>Enquêtes</h3><p>Des fiches, des punaises, des fils rouges. Et un rapport propre à la fin.</p><span class="d-foot mono">TOUCHE 6 <b>→</b></span></div></a>
-    </div>
-  </section>
-
-  <section class="block method" id="method">
-    <header class="block-head"><span class="mono">§ 2</span><h2 data-scramble>La méthode</h2><p>Quatre temps, toujours dans cet ordre.</p></header>
-    <div class="steps">
-      <svg class="steps-line" preserveAspectRatio="none" viewBox="0 0 1000 10"><path id="stepsPath" d="M0 5 H1000"/></svg>
-      <div class="step reveal"><b>A</b><h3>Indice</h3><p>Ce que tu observes. Rien de plus.</p></div>
-      <div class="step reveal"><b>B</b><h3>Hypothèse</h3><p>Ce que tu en déduis, avec un niveau de confiance.</p></div>
-      <div class="step reveal"><b>C</b><h3>Preuve</h3><p>Une source archivée et horodatée.</p></div>
-      <div class="step reveal"><b>D</b><h3>Coordonnées</h3><p>Le point vérifié, sur la carte.</p></div>
-    </div>
-  </section>
-
-  <section class="block rules">
-    <header class="block-head"><span class="mono">§ 3</span><h2 data-scramble>Règles de terrain</h2><p>Non négociables.</p></header>
-    <ol class="rules-list">
-      <li class="reveal"><b>01</b><div><h3>Sources ouvertes, rien d'autre</h3><p>Aucun piratage, aucun bornage, aucune usurpation d'identité, aucun faux profil pour tromper quelqu'un.</p></div></li>
-      <li class="reveal"><b>02</b><div><h3>Disparition : le 17 d'abord</h3><p>Il n'existe aucun délai légal. Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</p></div></li>
-      <li class="reveal"><b>03</b><div><h3>Jamais d'exposition</h3><p>On ne publie ni adresse, ni hypothèse, ni lieu supposé. Un adulte a le droit de partir.</p></div></li>
-      <li class="reveal"><b>04</b><div><h3>Hygiène numérique</h3><p>Navigateur dédié, comptes neutres, archivage des preuves, suppression des données après l'exercice.</p></div></li>
-    </ol>
-  </section>
-
-  <section class="block faq">
-    <header class="block-head"><span class="mono">§ 4</span><h2 data-scramble>Questions fréquentes</h2></header>
-    <details class="reveal"><summary>Que fait exactement cet outil ?</summary><p>Il prépare des recherches dans des services publics, affiche des cartes, lit les métadonnées d'une photo, propose des exercices et t'aide à documenter une démarche. Il ne contient aucune donnée sur des personnes.</p></details>
-    <details class="reveal"><summary>Où sont stockées mes données ?</summary><p>Uniquement dans ce navigateur, sur ton ordinateur. Pas de compte, pas de cookie, pas de serveur. Les photos ne sont jamais envoyées.</p></details>
-    <details class="reveal"><summary>Puis-je aider à une recherche réelle ?</summary><p>Oui, mais uniquement dans le cadre fixé par la famille, une association comme l'ARPD ou les forces de l'ordre, en suivant leurs consignes.</p></details>
-    <details class="reveal"><summary>Comment l'installer comme une application ?</summary><p>Depuis l'adresse en ligne, dans Edge : menu … › Applications › Installer ce site en tant qu'application.</p></details>
-  </section>
-
-  <section class="final">
-    <h2 class="giant sm" data-scramble>PRÊT ?</h2>
-    <a class="btn big" href="#dashboard">Entrer dans le hub <span>→</span></a>
-    <p class="mono small muted">ou appuie sur <kbd>Entrée</kbd></p>
-  </section>
-</section>
-
-<!-- =====================================================
-     01 · TABLEAU DE BORD
-     ===================================================== -->
-<section class="view" id="v-dashboard">
-  <header class="m-head">
-    <div class="m-meta mono"><span>FIG. 01</span><span>TABLEAU DE BORD</span><span id="dashDate"></span></div>
-    <h1 class="giant md" id="greet" data-scramble>Bonjour</h1>
-    <p class="lead">Ton poste d'entraînement OSINT &amp; GEOINT.</p>
-  </header>
-  <div class="wrap">
-    <div class="stats">
-      <div class="stat"><small class="mono">TEMPS</small><b id="sTime">0</b><span>d'entraînement cumulé</span></div>
-      <div class="stat"><small class="mono">SÉRIE</small><b id="sStreak">0</b><span>jours consécutifs</span></div>
-      <div class="stat"><small class="mono">EXPÉRIENCE</small><b id="sXp">0</b><span id="sRank">XP</span></div>
-      <div class="stat"><small class="mono">GEOGUESSR</small><b id="sSessions">0</b><span>sessions enregistrées</span></div>
-      <div class="stat"><small class="mono">INDICES</small><b id="sEntries">0</b><span>fiches d'enquête</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><h3>Calendrier d'activité</h3><span class="mono small muted">16 DERNIÈRES SEMAINES</span></div>
-      <div class="heat-wrap"><div class="heat-days mono"><span>L</span><span></span><span>M</span><span></span><span>V</span><span></span><span>D</span></div><div id="heat" class="heat"></div></div>
-      <div class="heat-legend mono small muted">Moins <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Plus · <span id="heatInfo"></span></div>
-    </div>
-
-    <div class="cols">
-      <div class="card"><div class="card-head"><h3>Prochaines étapes</h3><a class="link mono small" href="#training">PROGRAMME →</a></div><ul id="dashTasks" class="list"></ul></div>
-      <div class="card"><div class="card-head"><h3>Dernières fiches</h3><a class="link mono small" href="#cases">TOUT VOIR →</a></div><ul id="dashEntries" class="list"></ul></div>
-    </div>
-
-    <div class="cols">
-      <div class="card note"><div class="card-head"><h3>Réflexe du jour</h3><button class="btn ghost sm" id="nextTip">Suivant ↻</button></div><p id="tip" class="tip"></p></div>
-      <div class="card"><div class="card-head"><h3>Ressources</h3></div>
-        <div class="links">
-          <a href="https://www.arpd.fr/" target="_blank" rel="noopener">ARPD — avis de recherche ↗</a>
-          <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix — défis ↗</a>
-          <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Bellingcat — guides ↗</a>
-          <a href="https://web.archive.org/" target="_blank" rel="noopener">Wayback Machine ↗</a>
-        </div>
-        <p class="alert mono small">DISPARITION RÉELLE → APPELER LE 17, SANS ATTENDRE.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- =====================================================
-     02 · RECHERCHE
-     ===================================================== -->
-<section class="view" id="v-search">
-  <header class="m-head">
-    <div class="m-meta mono"><span>FIG. 02</span><span>RECHERCHE</span><span>SOURCES OUVERTES</span></div>
-    <h1 class="giant md" data-scramble>Recherche</h1>
-    <p class="lead">Tape un pseudo, un nom, une URL de page ou d'image. <kbd>Entrée</kbd> ouvre l'outil surligné.</p>
-  </header>
-  <div class="wrap">
-    <div class="prompt">
-      <span class="mono caret">&gt;</span>
-      <input id="q" placeholder="jean_dupont69 · Jean Dupont · https://…" autocomplete="off" spellcheck="false">
-      <span id="qType" class="badge mono off">EN ATTENTE</span>
-    </div>
-    <div class="history" id="history"></div>
-    <div class="filters">
-      <span class="mono small muted">CIBLER :</span>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:facebook.com"><span>Facebook</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:instagram.com"><span>Instagram</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:tiktok.com"><span>TikTok</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:x.com"><span>X</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:linkedin.com"><span>LinkedIn</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:leboncoin.fr"><span>Leboncoin</span></label>
-      <label class="toggle"><input type="checkbox" class="dork" value="site:blablacar.fr"><span>BlaBlaCar</span></label>
-      <label class="toggle"><input type="checkbox" id="dorkExact" checked><span>"Exact"</span></label>
-    </div>
-    <details class="adv" id="advBox">
-      <summary class="mono small">OPÉRATEURS AVANCÉS</summary>
-      <div class="adv-grid">
-        <label class="fl">Dans le titre (intitle:)<input class="adv-in" id="advTitle" placeholder="ex : disparition"></label>
-        <label class="fl">Dans l'adresse (inurl:)<input class="adv-in" id="advUrl" placeholder="ex : profil"></label>
-        <label class="fl">Type de fichier (filetype:)<select class="adv-in" id="advType"><option value="">Tous</option><option>pdf</option><option>doc</option><option>docx</option><option>xls</option><option>xlsx</option><option>ppt</option><option>csv</option><option>txt</option></select></label>
-        <label class="fl">Site précis (site:)<input class="adv-in" id="advSite" placeholder="ex : lyon.fr"></label>
-        <label class="fl">Exclure ces mots<input class="adv-in" id="advNot" placeholder="ex : football vente"></label>
-        <label class="fl">Un de ces mots (OR)<input class="adv-in" id="advOr" placeholder="ex : Lyon Villeurbanne"></label>
-        <label class="fl">Publié après (after:)<input class="adv-in" type="date" id="advAfter"></label>
-        <label class="fl">Publié avant (before:)<input class="adv-in" type="date" id="advBefore"></label>
-      </div>
-      <p class="small muted">Les opérateurs s'ajoutent à la requête Google, Bing et DuckDuckGo. « after: » et « before: » sont propres à Google. <button class="link-btn" id="advReset">Tout effacer</button></p>
-    </details>
-    <p class="mono small dork-line"><span class="muted">REQUÊTE :</span> <code id="dorkPreview">—</code> <button class="btn ghost sm" id="copyDork">Copier</button></p>
-    <div id="toolGroups"></div>
-  </div>
-</section>
-
-<!-- =====================================================
-     03 · CARTE
-     ===================================================== -->
-<section class="view" id="v-map">
-  <div class="map-wrap">
-    <div id="leaflet"></div>
-    <div class="map-reticle" aria-hidden="true"></div>
-    <div class="cmp-handle" id="cmpHandle" hidden><span class="mono">AVANT</span><i></i><span class="mono">APRÈS</span></div>
-    <div class="map-search panel">
-      <input id="geoQ" placeholder="Adresse, lieu ou « 45.76, 4.83 »" autocomplete="off">
-      <div id="geoResults"></div>
-    </div>
-    <aside class="map-panel panel">
-      <button class="mp-toggle mono" id="mapPanelToggle" aria-expanded="true">Réduire ▾</button>
-      <div class="m-meta mono"><span>FIG. 03</span><span>CARTE GEOINT</span></div>
-      <h2 data-scramble>Point</h2>
-      <p class="net-note" data-needs-net hidden> Connexion indisponible : les fonds de carte, la recherche d'adresse et les outils externes sont indisponibles. Les points de tes fiches restent consultables dans Enquêtes.</p>
-      <p class="mono small muted" id="mapHint">Clique sur la carte pour placer un point.</p>
-      <div class="coords"><code id="coords">—</code><button class="btn ghost sm" id="copyCoords" title="Copier">Copier</button></div>
-
-      <h3 class="mono">☀ SOLEIL &amp; OMBRES</h3>
-      <div class="row"><input type="datetime-local" id="sunDate"><button class="btn ghost sm" id="sunNow">Maint.</button></div>
-      <div id="sunInfo" class="small">—</div>
-
-      <h3 class="mono">↗ OUVRIR CE POINT DANS</h3>
-      <div id="pointTools" class="links"><span class="muted small">Place d'abord un point.</span></div>
-
-      <h3 class="mono">⟷ MESURE</h3>
-      <div class="row"><button class="btn ghost sm" id="measureBtn">Mesurer une distance</button><span id="measureOut" class="mono small"></span></div>
-
-      <h3 class="mono">◯ RAYON AUTOUR DU POINT</h3>
-      <div class="row"><input id="radKm" type="number" min="0.05" step="0.1" value="1" aria-label="Rayon en kilomètres"><span class="mono small">km</span>
-        <button class="btn ghost sm" id="radAdd">Tracer</button><button class="btn ghost sm" id="radClear" title="Effacer les cercles">✕</button></div>
-      <p class="mono small muted" id="radOut">Ex. : « à moins de 2 km de la gare ».</p>
-
-      <h3 class="mono">◎ CALQUES OVERPASS (OPENSTREETMAP)</h3>
-      <div class="row"><select id="ovPreset" aria-label="Type d'objet à afficher"></select></div>
-      <div class="row" id="ovCustomRow" hidden><input id="ovCustom" placeholder="clé=valeur (ex. shop=bakery)" aria-label="Filtre Overpass personnalisé"></div>
-      <div class="row"><button class="btn ghost sm" id="ovRun">Afficher dans la vue</button><button class="btn ghost sm" id="ovClear" title="Effacer le calque">✕</button></div>
-      <p class="mono small muted" id="ovOut">Affiche les objets de la zone visible (zoom 13 minimum).</p>
-
-      <h3 class="mono">⇆ AVANT / APRÈS</h3>
-      <div class="row"><select id="cmpLayer" aria-label="Photo aérienne ancienne"><option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965">Photos aériennes 1950-1965 (IGN)</option></select></div>
-      <div class="row"><button class="btn ghost sm" id="cmpBtn">Comparer avec aujourd'hui</button></div>
-      <p class="mono small muted" id="cmpOut">Glisse la barre verticale : ancienne photo à gauche, carte actuelle à droite.</p>
-
-      <h3 class="mono">📌 CONSIGNER</h3>
-      <button class="btn wide" id="pinToCase">Ajouter le point à l'enquête</button>
-    </aside>
-  </div>
-</section>
-
-<!-- =====================================================
-     04 · PHOTO
-     ===================================================== -->
-<section class="view" id="v-photo">
-  <header class="m-head">
-    <div class="m-meta mono"><span>FIG. 04</span><span>ANALYSE PHOTO</span><span>TRAITEMENT 100 % LOCAL</span></div>
-    <h1 class="giant md" data-scramble>Photo</h1>
-    <p class="lead">L'image reste sur ton PC. Glisse-la n'importe où sur la page, ou colle-la avec <kbd>Ctrl</kbd>+<kbd>V</kbd>.</p>
-  </header>
-  <div class="wrap">
-    <p class="net-note" data-needs-net hidden> Connexion indisponible : la photo s'affiche et les réglages fonctionnent, mais la lecture des métadonnées (EXIF) nécessite une connexion au premier chargement.</p>
-    <label id="drop" class="drop">
-      <input type="file" id="file" accept="image/*" hidden>
-      <span class="drop-ico mono">[ + ]</span>
-      <b>Déposer une image</b>
-      <span class="mono small muted">ou cliquer pour parcourir</span>
-    </label>
-    <div class="photo-grid">
-      <div>
-        <div class="photo-view" id="photoView">
-          <div class="img-wrap" id="imgWrap"><img id="preview" alt=""><div class="grid-ov" id="gridOv"></div></div>
-          <span class="mono muted" id="noImg">AUCUNE IMAGE</span>
-        </div>
-        <p class="mono small muted">Clic sur l'image = loupe ×2,6 · déplace la souris pour explorer.</p>
-        <div class="card">
-          <div class="card-head"><h3>Réglages de lecture</h3><button class="btn ghost sm" id="fxReset">Réinitialiser</button></div>
-          <div class="sliders">
-            <label>Contraste <input type="range" id="fxC" min="50" max="300" value="100"><output>100</output></label>
-            <label>Luminosité <input type="range" id="fxB" min="30" max="250" value="100"><output>100</output></label>
-            <label>Saturation <input type="range" id="fxS" min="0" max="300" value="100"><output>100</output></label>
-          </div>
-          <div class="row wrap-row">
-            <label class="toggle"><input type="checkbox" id="fxI"><span>Inverser</span></label>
-            <label class="toggle"><input type="checkbox" id="fxG"><span>Niveaux de gris</span></label>
-            <label class="toggle"><input type="checkbox" id="gridT"><span>Grille 3×3</span></label>
-            <label class="toggle"><input type="checkbox" id="gridF"><span>Grille fine</span></label>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Recherche inversée</h3></div>
-          <p class="small muted">1. Copie l'image · 2. ouvre un outil · 3. colle-la (Ctrl+V).</p>
-          <div class="links">
-            <button id="copyImg">Copier l'image</button>
-            <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens ↗</a>
-            <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex ↗</a>
-            <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye ↗</a>
-            <a href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing Visual ↗</a>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <div class="card-head"><h3>Métadonnées (EXIF)</h3></div>
-          <table id="exif" class="kv"><tr><td class="muted">Aucune image chargée</td></tr></table>
-          <button class="btn wide" id="exifToMap" hidden>Voir la position GPS sur la carte →</button>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Grille d'observation</h3></div>
-          <div id="clueGrid"></div>
-          <button class="btn wide" id="photoToCase">Créer une fiche avec cette photo →</button>
-          <button class="btn ghost wide" id="cluesToCase">Envoyer seulement les observations</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- =====================================================
-     05 · ENTRAÎNEMENT
-     ===================================================== -->
-<section class="view" id="v-training">
-  <header class="m-head">
-    <div class="m-meta mono"><span>FIG. 05</span><span>ENTRAÎNEMENT</span><span>RÉGULARITÉ &gt; INTENSITÉ</span></div>
-    <h1 class="giant md" data-scramble>Terrain</h1>
-    <p class="lead">Un programme en cinq niveaux, des exercices intégrés, ton suivi GeoGuessr et ton mémo d'indices.</p>
-  </header>
-  <div class="wrap">
-    <div class="rank">
-      <div class="rank-badge"><span id="rankNum">I</span><small class="mono">RANG</small></div>
-      <div class="rank-info">
-        <small class="mono muted">RANG ACTUEL</small>
-        <h2 id="rankName">Observateur</h2>
-        <div class="xpbar"><div id="xpFill"></div></div>
-        <p class="mono small" id="xpText"></p>
-      </div>
-      <div class="rank-daily">
-        <button class="daily-btn" id="dailyQuizBtn"><small class="mono">QUIZ DU JOUR</small><b id="dailyQuizName">—</b><span class="mono small" id="dailyQuizState"></span></button>
-        <button class="daily-btn" id="dailyGgBtn"><small class="mono">DÉFI GEOGUESSR DU JOUR</small><b id="dailyGgName">—</b><span class="mono small" id="dailyGgState"></span></button>
-      </div>
-    </div>
-
-    <div class="seg mono big-seg" id="trainTabs">
-      <button class="on" data-ttab="program">PROGRAMME</button>
-      <button data-ttab="drills">EXERCICES</button>
-      <button data-ttab="gg">GEOGUESSR</button>
-      <button data-ttab="memo">MÉMO INDICES</button>
-    </div>
-
-    <!-- Programme -->
-    <div class="tpane" data-tpane="program">
-      <div id="program" class="program"></div>
-      <div class="cols">
-        <div class="card"><div class="card-head"><h3>Badges</h3><span id="badgeCount" class="mono small"></span></div><div id="badges" class="badges"></div></div>
-        <div class="card">
-          <div class="card-head"><h3>Mes défis perso</h3><span id="taskPct" class="mono small"></span></div>
-          <div class="progress"><div id="taskBar"></div></div>
-          <div class="row"><input id="taskInput" placeholder="Nouveau défi…"><button class="btn" id="taskAdd">Ajouter</button></div>
-          <ul id="taskList" class="list"></ul>
-          <h4 class="mono small">RESSOURCES</h4>
-          <div class="links">
-            <a href="https://gralhix.com" target="_blank" rel="noopener">Gralhix (Sofia Santos) ↗</a>
-            <a href="https://www.bellingcat.com/category/resources/how-tos/" target="_blank" rel="noopener">Guides Bellingcat ↗</a>
-            <a href="https://www.geoguessr.com/vgp/3331" target="_blank" rel="noopener">Seterra — régions ↗</a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Exercices -->
-    <div class="tpane" data-tpane="drills" hidden>
-      <p class="net-note" data-needs-net hidden> Connexion indisponible : les quiz Départements, Indices et Outils fonctionnent. « Ombres & heure » et les exercices photo nécessitent une connexion.</p>
-      <div class="card play" id="peCard">
-        <div class="card-head"><h3>Exercice photo : géolocaliser une vraie image</h3><span class="mono small muted">PHOTOS WIKIMEDIA COMMONS · LIBRES DE DROITS</span></div>
-        <div id="peSetup" class="play-setup">
-          <p class="small">Une vraie photo géolocalisée, prise par un photographe bénévole, s'affiche sans son titre. Observe, place ta réponse sur la carte, puis découvre le lieu exact, l'auteur et la licence. 5 photos, 5 000 points maximum par photo.</p>
-          <div class="row wrap-row">
-            <label class="fl inline">Zone <select id="peZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
-            <button class="btn" id="peStart">Lancer l'exercice →</button>
-          </div>
-        </div>
-        <div id="peGame" class="play-game" hidden>
-          <div class="pg-head mono"><span id="peRound">PHOTO 1/5</span><span id="peScore">0 PTS</span><button class="btn ghost sm" id="peSkip">Autre photo</button><button class="btn ghost sm" id="peQuit">Quitter</button></div>
-          <div class="pg-grid">
-            <div class="pe-img" id="peImgBox"><img id="peImg" alt="Photo à géolocaliser"><span class="mono small" id="peLoad">Chargement d'une photo…</span></div>
-            <div class="pg-side">
-              <div id="peMap" class="pg-map"></div>
-              <div id="peResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
-              <button class="btn wide" id="peGuess" disabled>Valider ma réponse</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="quizList" class="quiz-list"></div>
-      <div id="quizBox" class="card quiz" hidden></div>
-    </div>
-
-    <!-- GeoGuessr -->
-    <div class="tpane" data-tpane="gg" hidden>
-      <div class="card play">
-        <div class="card-head"><h3>Partie intégrée</h3><span class="mono small muted">STREET VIEW DANS LE HUB · EXPÉRIMENTAL</span></div>
-        <div id="playSetup" class="play-setup">
-          <p class="small">Le même principe que GeoGuessr, sans quitter le site : une image Street View s'affiche, tu cliques sur la carte là où tu penses être. 5 manches, 5 000 points maximum par manche.</p>
-          <div class="row wrap-row">
-            <label class="fl inline">Zone <select id="playZone"><option value="fr">France</option><option value="aura">Lyon / Auvergne-Rhône-Alpes</option></select></label>
-            <label class="fl inline">Mode <select id="playMode"><option value="move">Move (déplacement libre)</option><option value="still">Figé (image fixe)</option></select></label>
-            <button class="btn" id="playStart">Lancer une partie →</button>
-          </div>
-        </div>
-        <div id="playGame" class="play-game" hidden>
-          <div class="pg-head mono"><span id="pgRound">MANCHE 1/5</span><span id="pgScore">0 PTS</span><button class="btn ghost sm" id="pgSkip" title="Si l'image reste noire ou vide">Lieu sans image ? Passer</button><button class="btn ghost sm" id="pgQuit">Quitter</button></div>
-          <div class="pg-grid">
-            <div class="pg-sv"><iframe id="pgFrame" title="Street View" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe><div class="pg-mask mono">ADRESSE MASQUÉE</div><div class="pg-still" id="pgStill" hidden></div></div>
-            <div class="pg-side">
-              <div id="pgMap" class="pg-map"></div>
-              <div id="pgResult" class="pg-result mono small">Clique sur la carte pour placer ta réponse.</div>
-              <button class="btn wide" id="pgGuess" disabled>Valider ma réponse</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="cols">
-        <div>
-          <div class="card"><div class="card-head"><h3>Défi du jour</h3><span class="mono small muted" id="ggDailyDate"></span></div><div id="ggDaily"></div></div>
-          <div class="card"><div class="card-head"><h3>Mes cartes</h3><button class="btn ghost sm" id="ggAddMap">+ Carte</button></div>
-            <div id="ggLinks" class="gg-links"></div>
-            <p class="small muted">Gratuit et sans compte pour s'échauffer : <a class="link" href="https://www.worldguessr.com/map/france" target="_blank" rel="noopener">WorldGuessr France ↗</a></p>
-            <p class="small muted">GeoGuessr ne peut pas s'afficher à l'intérieur du hub : le site l'interdit, et la connexion à ton compte ne passerait pas. <button class="link-btn" id="ggTryEmbed">Vérifier par toi-même dans la visionneuse</button></p>
-          </div>
-          <div class="card"><div class="card-head"><h3>Nouvelle session</h3></div>
-            <div class="form-grid">
-              <label class="fl">Carte<select id="ggMap"></select></label>
-              <label class="fl">Mode<select id="ggMode"><option>Move</option><option>No Move</option><option>NMPZ</option></select></label>
-              <label class="fl">Score<input id="ggScore" type="number" min="0" max="25000" placeholder="0 – 25 000"></label>
-              <label class="fl">Durée (min)<input id="ggTime" type="number" min="0" placeholder="facultatif"></label>
-            </div>
-            <label class="fl">Ce qui m'a aidé / trompé<textarea id="ggNote" placeholder="ex : confondu Drôme et Ardèche, bornes jaunes repérées…"></textarea></label>
-            <button class="btn wide" id="ggAdd">Enregistrer la session</button>
-          </div>
-        </div>
-        <div>
-          <div class="card"><div class="card-head"><h3>Statistiques</h3>
-              <div class="row filt"><select id="ggFMap" class="sm-sel"></select><select id="ggFMode" class="sm-sel"><option value="">Tous modes</option><option>Move</option><option>No Move</option><option>NMPZ</option></select></div></div>
-            <div class="kpis" id="ggKpis"></div>
-            <div class="chart-box"><canvas id="ggChart"></canvas><span id="ggAvg" class="mono small muted"></span></div>
-            <label class="fl inline">Objectif de score <input id="ggGoal" type="number" min="0" max="25000" step="500"></label>
-          </div>
-          <div class="card"><div class="card-head"><h3>Analyse de tes parties intégrées</h3><span class="mono small muted">STREET VIEW + EXERCICES PHOTO</span></div><div id="playStats"></div></div>
-          <div class="card"><div class="card-head"><h3>Historique</h3><span class="mono small muted" id="ggCount"></span></div><ul id="ggList" class="list sessions"></ul></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mémo -->
-    <div class="tpane" data-tpane="memo" hidden>
-      <div class="cols cols-memo">
-        <div>
-          <div class="card"><div class="card-head"><h3>Nouvel indice</h3></div>
-            <label class="fl">Catégorie<select id="memoCat"></select></label>
-            <label class="fl">Zone (pays, région, ville…)<input id="memoZone" placeholder="ex : Drôme, Bretagne, Lyon 7e"></label>
-            <label class="fl">Indice<textarea id="memoText" placeholder="Ce que tu as remarqué, de façon vérifiable"></textarea></label>
-            <label class="fl">Source (facultatif)<input id="memoSrc" placeholder="https://…"></label>
-            <button class="btn wide" id="memoAdd">Ajouter au mémo</button>
-          </div>
-          <div class="card"><div class="card-head"><h3>Révision espacée</h3><button class="btn sm" id="memoReview">Réviser</button></div>
-            <div id="memoReviewBox" class="flash"></div></div>
-        </div>
-        <div>
-          <div class="memo-tools"><input id="memoQ" placeholder="Rechercher dans le mémo…"><div id="memoChips" class="chips"></div></div>
-          <div id="memoGrid" class="memo-grid"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- =====================================================
-     06 · ENQUÊTES
-     ===================================================== -->
-<section class="view" id="v-cases">
-  <header class="m-head">
-    <div class="m-meta mono"><span>FIG. 06</span><span>ENQUÊTES</span><span id="caseMeta"></span></div>
-    <h1 class="giant md" data-scramble>Enquêtes</h1>
-    <p class="lead">Indice → Hypothèse → Preuve → Coordonnées.</p>
-  </header>
-  <div class="wrap">
-    <div class="case-bar card">
-      <div class="cb-top">
-        <div><small class="mono muted">DOSSIER ACTIF</small><h2 id="caseTitle">—</h2></div>
-        <div class="row">
-          <button class="btn ghost sm" id="renameCase">Renommer</button>
-          <button class="btn danger sm" id="delCase">Supprimer</button>
-        </div>
-      </div>
-      <div class="case-chips" id="caseChips"></div>
-      <div class="cs-wrap"><input id="caseSearch" placeholder="Rechercher dans toutes les fiches de tous les dossiers…" autocomplete="off" aria-label="Rechercher dans les fiches"><div id="caseResults" class="cs-results"></div></div>
-      <div class="row cb-new">
-        <input id="newCase" placeholder="Nom d'un nouveau dossier (ex : Gralhix n° 12)">
-        <button class="btn" id="addCase">Créer le dossier</button>
-        <select class="caseSelect" hidden></select>
-      </div>
-    </div>
-
-    <div class="cols cols-cases">
-      <div class="card" id="formCard">
-        <div class="card-head"><h3 id="formTitle">Nouvelle fiche</h3></div>
-        <label class="fl">Indice observé<textarea id="rClue"></textarea></label>
-        <label class="fl">Hypothèse<textarea id="rHyp"></textarea></label>
-        <label class="fl">Preuve (source, lien archivé, capture)<textarea id="rProof"></textarea></label>
-        <label class="fl">Coordonnées GPS<input id="rGps" placeholder="45.7640, 4.8357"></label>
-        <label class="fl">Confiance <span id="rConfLbl" class="conf"></span><input id="rConf" type="range" min="1" max="5" value="3"></label>
-        <div class="fl">Images <span class="muted">(bouton, glisser-déposer ou Ctrl+V)</span><div class="thumbs" id="rImgs"></div></div>
-        <button class="btn wide" id="rAdd">Ajouter la fiche</button>
-        <button class="btn ghost wide" id="rCancel" hidden>Annuler la modification</button>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="seg mono">
-            <button class="on" data-mode="board">TABLEAU</button>
-            <button data-mode="timeline">CHRONOLOGIE</button>
-          </div>
-          <span id="rCount" class="mono small muted"></span>
-        </div>
-        <div class="row wrap-row">
-          <button class="btn ghost sm" id="linkMode" title="Clique une fiche puis une autre pour les relier">Relier des fiches</button>
-          <button class="btn ghost sm" id="tidyBoard">Ranger</button>
-          <span class="sep"></span>
-          <button class="btn ghost sm" id="exportPdf">Rapport PDF</button>
-          <button class="btn ghost sm" id="exportMd">Rapport .md</button>
-          <button class="btn ghost sm" id="exportJson">Sauvegarde .json</button>
-          <label class="btn ghost sm">Restaurer .json<input type="file" id="importJson" accept=".json" hidden></label>
-        </div>
-        <p class="mono small muted" id="boardHint">Glisser : déplacer · ✎ ou double-clic : modifier · clic sur le GPS : voir sur la carte · clic sur un fil : le supprimer.</p>
-        <div class="board-scroll" id="boardScroll">
-          <div class="board" id="board"><svg id="strings"></svg></div>
-        </div>
-        <ol id="rList" class="timeline" hidden></ol>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- =====================================================
-     À PROPOS · CONDITIONS · CONFIDENTIALITÉ · PARAMÈTRES
-     ===================================================== -->
-<section class="view" id="v-about">
-  <header class="m-head">
-    <div class="m-meta mono"><span>ANNEXE</span><span>À PROPOS</span><span id="aboutVer"></span></div>
-    <h1 class="giant md" data-scramble>À propos</h1>
-  </header>
-  <div class="wrap">
-    <div class="seg mono big-seg" id="aboutTabs">
-      <button class="on" data-tab="info">PROJET</button>
-      <button data-tab="terms">CONDITIONS</button>
-      <button data-tab="privacy">CONFIDENTIALITÉ</button>
-      <button data-tab="settings">PARAMÈTRES</button>
-    </div>
-
-    <div class="tab-pane" data-pane="info">
-      <div class="cols">
-        <div class="card doc">
-          <h2>Le projet</h2>
-          <p>OSINT Hub est un carnet de terrain numérique pour s'entraîner à la recherche en sources ouvertes et à la géolocalisation d'images. Il réunit les outils utiles dans une seule fenêtre et impose une méthode : <b>indice, hypothèse, preuve, coordonnées</b>.</p>
-          <p>C'est un projet personnel, gratuit, sans serveur ni compte. Il n'est affilié à aucun service ni à aucune association cités.</p>
-          <p class="links"><a id="repoLink" href="#" target="_blank" rel="noopener">Code source sur GitHub ↗</a></p>
-        </div>
-        <div class="card doc">
-          <h2>Construit avec</h2>
-          <table class="kv">
-            <tr><td>Carte</td><td>Leaflet · IGN Géoplateforme · OpenStreetMap · Esri</td></tr>
-            <tr><td>Soleil</td><td>SunCalc</td></tr>
-            <tr><td>Métadonnées</td><td>exifr</td></tr>
-            <tr><td>Adresses</td><td>Nominatim (OpenStreetMap)</td></tr>
-            <tr><td>Objets sur la carte</td><td>Overpass API (OpenStreetMap)</td></tr>
-            <tr><td>Photos d'exercice</td><td>Wikimedia Commons (licences libres)</td></tr>
-            <tr><td>Altitudes</td><td>Open-Meteo · Copernicus DEM</td></tr>
-            <tr><td>Polices</td><td>Archivo · JetBrains Mono</td></tr>
-            <tr><td>Licence</td><td>MIT</td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="tab-pane doc card" data-pane="terms" hidden><div id="termsDoc"></div></div>
-    <div class="tab-pane doc card" data-pane="privacy" hidden><div id="privacyDoc"></div></div>
-    <div class="tab-pane" data-pane="settings" hidden>
-      <div class="cols">
-        <div class="card">
-          <div class="card-head"><h3>Affichage</h3></div>
-          <div class="setting"><div><b>Thème</b><p class="small muted">Papier (clair) ou nuit (sombre).</p></div>
-            <div class="seg mono"><button data-theme="paper">PAPIER</button><button data-theme="night">NUIT</button></div></div>
-          <div class="setting"><div><b>Effets animés</b><p class="small muted">Courbes de niveau, globe, réticule, transitions.</p></div>
-            <label class="switch"><input type="checkbox" id="fxToggle"><span></span></label></div>
-          <div class="setting"><div><b>Visionneuse intégrée</b><p class="small muted">Ouvre Google Maps, la vue satellite, Street View et OpenStreetMap dans un panneau du hub. Les sites qui l'interdisent s'ouvrent dans un onglet.</p></div>
-            <label class="switch"><input type="checkbox" id="viewerToggle"><span></span></label></div>
-          <div class="setting"><div><b>Menu, couleur, actions rapides</b><p class="small muted">Ordre des modules, modules masqués, couleur d'accent.</p></div>
-            <button class="btn ghost sm" id="setCustom">Personnaliser</button></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h3>Données</h3></div>
-          <div class="setting"><div><b>Sauvegarder</b><p class="small muted">Télécharge toutes tes données, images des fiches comprises (.json).</p></div><button class="btn ghost sm" id="setExport">Sauvegarder</button></div>
-          <div class="setting col"><div><b>Sauvegarde automatique dans un dossier</b></div><div id="backupStatus"></div></div>
-          <div class="setting"><div><b>Rappel de sauvegarde</b><p class="small muted">Un bandeau te le rappelle si tu n'as pas sauvegardé depuis…</p></div>
-            <select id="backupEvery" class="sm-sel"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option><option value="0">Jamais</option></select></div>
-          <div class="setting"><div><b>Visite guidée</b><p class="small muted">Présentation de l'interface en 7 étapes.</p></div><button class="btn ghost sm" id="setTour">Lancer</button></div>
-          <div class="setting"><div><b>Revoir la charte</b><p class="small muted">Réaffiche la fenêtre d'accord.</p></div><button class="btn ghost sm" id="setCharter">Afficher</button></div>
-          <div class="setting"><div><b>Effacer toutes les données</b><p class="small muted">Enquêtes, progression, scores, mémo, réglages. Irréversible.</p></div><button class="btn danger sm" id="setWipe">Effacer</button></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer class="foot mono">
-  <span>OSINT/HUB <b id="footVer"></b></span>
-  <span>Sources ouvertes uniquement · Disparition : 17</span>
-  <span><a href="#about" data-tab-link="terms">Conditions</a> · <a href="#about" data-tab-link="privacy">Confidentialité</a> · <a id="footRepo" href="#" target="_blank" rel="noopener">GitHub</a></span>
-</footer>
-
-</main>
-
-<!-- Charte au premier lancement -->
-<div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-label="Charte d'utilisation">
-  <div class="gate-box">
-    <p class="mono label">AVANT DE COMMENCER — CHARTE D'UTILISATION</p>
-    <h2>Quatre règles.</h2>
-    <ol class="gate-rules">
-      <li><b>Sources ouvertes uniquement.</b> Aucun piratage, aucune usurpation d'identité, aucun faux profil pour tromper.</li>
-      <li><b>Jamais pour surveiller ou exposer</b> une personne : pas de traque, pas de harcèlement, pas de divulgation d'informations.</li>
-      <li><b>Disparition réelle : le 17 d'abord.</b> Les informations vont aux enquêteurs ou à l'association, jamais sur les réseaux.</li>
-      <li><b>Tes données restent sur ton PC.</b> Tu es responsable de ce que tu y notes ; supprime-le après l'exercice.</li>
-    </ol>
-    <details class="gate-full"><summary class="mono small">LIRE LES CONDITIONS COMPLÈTES</summary><div id="gateTerms" class="doc"></div></details>
-    <label class="gate-check"><input type="checkbox" id="gateOk"> J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité.</label>
-    <button class="btn big wide" id="gateGo" disabled>Accepter et entrer →</button>
-  </div>
-</div>
-
-<!-- Palette de commandes -->
-<div id="palette" class="palette" role="dialog" aria-modal="true" aria-label="Palette de commandes">
-  <div class="palette-box">
-    <div class="palette-in"><span class="mono">&gt;</span><input id="paletteQ" placeholder="Commande ou outil…" autocomplete="off"></div>
-    <ul id="paletteList"></ul>
-    <p class="mono small muted palette-foot">↑↓ naviguer · Entrée valider · Échap fermer</p>
-  </div>
-</div>
-
-<!-- Visionneuse intégrée -->
-<aside id="viewer" class="viewer" hidden>
-  <div class="vw-resize" id="vwResize" title="Glisser pour redimensionner"></div>
-  <div class="vw-bar">
-    <span class="mono vw-lbl">VISIONNEUSE</span>
-    <div class="vw-tabs" id="vwTabs"></div>
-    <div class="vw-act">
-      <button id="vwExt" title="Ouvrir dans un onglet du navigateur">↗</button>
-      <button id="vwFull" title="Agrandir / réduire">⤢</button>
-      <button id="vwClose" title="Fermer la visionneuse">✕</button>
-    </div>
-  </div>
-  <p class="vw-note mono" id="vwNote"></p>
-  <div class="vw-body" id="vwBody"></div>
-</aside>
-
-<!-- Transition entre pages -->
-<div id="scan" aria-hidden="true"><span class="mono" id="scanLbl"></span></div>
-<div id="toast" class="mono" role="status" aria-live="polite"></div>
-
-<script src="js/00-base.js"></script>
-<script src="legal.js"></script>
-<script src="data.js"></script>
-<script src="world.js"></script>
-<script src="land.js"></script>
-<!-- Application : un fichier par module, chargés dans cet ordre (voir js/README.md) -->
-<script src="js/01-config.js"></script>
-<script src="js/02-navigation.js"></script>
-<script src="js/03-decor.js"></script>
-<script src="js/04-accueil.js"></script>
-<script src="js/05-chrono.js"></script>
-<script src="js/06-recherche.js"></script>
-<script src="js/07-carte.js"></script>
-<script src="js/08-photo.js"></script>
-<script src="js/09-entrainement.js"></script>
-<script src="js/10-enquetes.js"></script>
-<script src="js/11-sauvegarde.js"></script>
-<script src="js/12-tableau-de-bord.js"></script>
-<script src="js/13-parametres.js"></script>
-<script src="js/14-palette.js"></script>
-<script src="js/15-visite.js"></script>
-<script src="js/16-demarrage.js"></script>
+    <script src="js/00-base.js"></script>
+    <script src="legal.js"></script>
+    <script src="data.js"></script>
+    <script src="world.js"></script>
+    <script src="land.js"></script>
+    <!-- Application : un fichier par module, chargés dans cet ordre (voir js/README.md) -->
+    <script src="js/01-config.js"></script>
+    <script src="js/02-navigation.js"></script>
+    <script src="js/03-decor.js"></script>
+    <script src="js/04-accueil.js"></script>
+    <script src="js/05-chrono.js"></script>
+    <script src="js/06-recherche.js"></script>
+    <script src="js/07-carte.js"></script>
+    <script src="js/08-photo.js"></script>
+    <script src="js/09-entrainement.js"></script>
+    <script src="js/10-enquetes.js"></script>
+    <script src="js/11-sauvegarde.js"></script>
+    <script src="js/12-tableau-de-bord.js"></script>
+    <script src="js/13-parametres.js"></script>
+    <script src="js/14-palette.js"></script>
+    <script src="js/15-visite.js"></script>
+    <script src="js/16-demarrage.js"></script>
+    <script src="js/17-voyage.js"></script>
+    <script src="js/18-reseau.js"></script>
 </body>
 </html>
